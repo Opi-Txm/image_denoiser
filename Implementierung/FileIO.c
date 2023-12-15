@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include <unistd.h>
+#include "FileIO.h"
+
 struct PPMFile {
     int width;          // Width of the image
     int height;         // Height of the image
@@ -33,7 +35,6 @@ uint8_t* readFile(const char* path) {
     fclose(file);
 
     return rawfile;
-
 }
 
 bool writeFile(const char* path, char* string, size_t size) {
@@ -72,6 +73,7 @@ void readHeader(const uint8_t* file, struct PPMFile* ppmFile) {
     }
     sscanf(file + offset, "%d", &ppmFile->width);
 
+    offset++;
     while (file[offset] == ' ') {
         offset++;
     }
