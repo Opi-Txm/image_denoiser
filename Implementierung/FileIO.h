@@ -11,5 +11,5 @@ struct PPMFile;
 
 uint8_t* readPPMFile(const char* path);
 
-bool writePGMFile(const char* path, char* string, size_t size);
+bool writePGMFile(const char* path, char* data, size_t width, size_t height, size_t maxColorValue);
 

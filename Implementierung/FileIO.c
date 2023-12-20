@@ -10,7 +10,7 @@
 // Reads the content of a PPM File and returns it as a pointer to the raw data  
 uint8_t* readPPMFile(const char* filepath) {
     FILE* ppmFilePtr = fopen(filepath, "rb");
-    int width, height, maxColorValue;
+    size_t width, height, maxColorValue;
     uint8_t* rawData;
 
     // Check if the ppm file doesn't exist
@@ -37,7 +37,7 @@ uint8_t* readPPMFile(const char* filepath) {
     }
 
     // Get width and height and maxColorValue (whitespaces are skipped automatically from fscanf)
-    fscanf(ppmFilePtr, "%d %d %d", &width, &height, &maxColorValue);
+    fscanf(ppmFilePtr, "%ld %ld %ld", &width, &height, &maxColorValue);
 
     // Skip the newline after the maxColorValue
     fgetc(ppmFilePtr);
@@ -50,8 +50,25 @@ uint8_t* readPPMFile(const char* filepath) {
     return rawData;
 }
 
-bool writePGMFile(const char* path, char* string, size_t size) {
+bool writePGMFile(const char* filepath, char* data, size_t width, size_t height, size_t maxColorValue) {
+    FILE* pgmFilePtr = fopen(filepath, "w");
 
+    // Check if the pgm file doesn't exist
+    if (pgmFilePtr == NULL) {
+        fprintf(stderr, "ERROR: The following file does not exist!: %s\n", filepath);
+        return false;
+    }
+
+    // Write the magic number and the other metadata in the header  
+    fprintf(pgmFilePtr, "P2\n%ld %ld\n%ld\n", width, height, maxColorValue);
+
+    // Write the pixel values 
+    for(size_t i = 0; i < (width * height); i++) {
+        fprintf(pgmFilePtr, "%c", data[i]);
+    }
+
+    fclose(pgmFilePtr);
+    return true;
 }
 
 
