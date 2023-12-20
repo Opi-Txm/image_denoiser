@@ -7,13 +7,6 @@
 #include <unistd.h>
 #include "FileIO.h"
 
-struct PPMFile {
-    int width;          // Width of the image
-    int height;         // Height of the image
-    int maxColorValue;  // Maximum color value
-    uint8_t* rawData;   // Raw Data of the ppm file
-};
-
 // Reads the content of a PPM File and returns it as a pointer to the raw data  
 uint8_t* readPPMFile(const char* filepath) {
     FILE* ppmFilePtr = fopen(filepath, "rb");
@@ -50,6 +43,7 @@ uint8_t* readPPMFile(const char* filepath) {
     size_t rawDataSize = width * height * 3;
     rawData = (uint8_t*) malloc(rawDataSize);
     fread(rawData, rawDataSize, 1, ppmFilePtr);
+    fclose(ppmFilePtr);
     return rawData;
 }
 
