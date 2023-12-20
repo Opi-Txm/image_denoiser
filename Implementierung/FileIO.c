@@ -39,6 +39,9 @@ uint8_t* readPPMFile(const char* filepath) {
     // Get width and height and maxColorValue (whitespaces are skipped automatically from fscanf)
     fscanf(ppmFilePtr, "%d %d %d", &width, &height, &maxColorValue);
 
+    // Skip the newline after the maxColorValue
+    fgetc(ppmFilePtr);
+
     // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
     size_t rawDataSize = width * height * 3;
     rawData = (uint8_t*) malloc(rawDataSize);
