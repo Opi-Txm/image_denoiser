@@ -8,22 +8,21 @@
 #include "FileIO.h"
 
 // Reads the content of a PPM File and returns it as a pointer to the raw data  
-uint8_t* readPPMFile(const char* filepath) {
+struct PPMFile readPPMFile(const char* filepath) {
     FILE* ppmFilePtr = fopen(filepath, "rb");
-    size_t width, height, maxColorValue;
-    uint8_t* rawData;
+    struct PPMFile ppmFile;
 
     // Check if the ppm file doesn't exist
     if (ppmFilePtr == NULL) {
         fprintf(stderr, "ERROR: The following file does not exist!: %s\n", filepath);
-        return NULL;
+        exit(1);
     }
 
     // Check if the ppm file is readable
     if (access(filepath, R_OK)) {
         fclose(ppmFilePtr);
         fprintf(stderr, "ERROR: Not allowed to read this file!\n");
-        return NULL;
+        exit(1);
     }
 
     // Check for the magic number 
@@ -33,21 +32,21 @@ uint8_t* readPPMFile(const char* filepath) {
 
     if (magic_number[0] != 'P' || magic_number[1] != '6') {
         fprintf(stderr, "Error: Wrong data format!\n");
-        return NULL;
+        exit(1);
     }
 
     // Get width and height and maxColorValue (whitespaces are skipped automatically from fscanf)
-    fscanf(ppmFilePtr, "%ld %ld %ld", &width, &height, &maxColorValue);
+    fscanf(ppmFilePtr, "%d %d %d", &ppmFile.width, &ppmFile.height, &ppmFile.maxColorValue);
 
     // Skip the newline after the maxColorValue
     fgetc(ppmFilePtr);
 
     // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
-    size_t rawDataSize = width * height * 3;
-    rawData = (uint8_t*) malloc(rawDataSize);
-    fread(rawData, rawDataSize, 1, ppmFilePtr);
+    size_t rawDataSize = ppmFile.width * ppmFile.height * 3;
+    ppmFile.data = (uint8_t*) malloc(rawDataSize);
+    fread(ppmFile.data, rawDataSize, 1, ppmFilePtr);
     fclose(ppmFilePtr);
-    return rawData;
+    return ppmFile;
 }
 
 bool writePGMFile(const char* filepath, char* data, size_t width, size_t height, size_t maxColorValue) {
@@ -70,5 +69,4 @@ bool writePGMFile(const char* filepath, char* data, size_t width, size_t height,
     fclose(pgmFilePtr);
     return true;
 }
-
 

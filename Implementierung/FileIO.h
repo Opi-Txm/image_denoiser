@@ -7,7 +7,12 @@
 #include <unistd.h>
 
 
-struct PPMFile;
+struct PPMFile {
+    int width;
+    int height;
+    int maxColorValue;
+    uint8_t* data;
+};
 
 uint8_t* readPPMFile(const char* path);
 
