@@ -59,7 +59,7 @@ void writePGMFile(const char* filepath, uint8_t* data, size_t width, size_t heig
     }
 
     // Write the magic number and the other metadata in the header  
-    fprintf(pgmFilePtr, "P2\n%ld %ld\n%ld\n", width, height, maxColorValue);
+    fprintf(pgmFilePtr, "P5\n%ld %ld\n%ld\n", width, height, maxColorValue);
 
     // Write the pixel values 
     for(size_t i = 0; i < (width * height); i++) {

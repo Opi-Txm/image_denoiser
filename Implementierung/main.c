@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                 // break;
             case 'i':
                 inputFilePath = optarg; // Get the input file path 
-                if (strcmp(inputFilePath, "")) {
+                if (!strcmp(inputFilePath, "")) {
                     fprintf(stderr, "Invalid Path!\n");
                     //exit(FAILED_ALLOCATION); TODO: define the errors
                 }
