@@ -27,8 +27,8 @@ int main(int argc, char *argv[]) {
 
     char *outputfile = "";
 
-    PPMFile *input = NULL; //TODO: Just for logic purposes(choose the correct types)
-    PPMFile *result = NULL; //TODO: Just for logic purposes(choose the correct types)
+    struct PPMFile *input = NULL; //TODO: Just for logic purposes(choose the correct types)
+    struct PPMFile *result = NULL; //TODO: Just for logic purposes(choose the correct types)
 
     int opt;
     struct option long_options[] = {{"version",     optional_argument, NULL, 'V'},
@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
                 } else {
                     fprintf(stderr, "Please provide 0 or 1 as the version\n");
                     printUsage();
-                    freeAll(input);
-                    freeAll(result);
+                    free(input);
+                    free(result);
                     return WRONG_ARGUMENT_INPUT;
                 }
                 break;
@@ -84,18 +84,17 @@ int main(int argc, char *argv[]) {
                     if (iterations < 0) {
                         fprintf(stderr, "The number of calls needs to be > 0\n");
                         printUsage();
-                        freeAll(input);
-                        freeAll(result);
+                        free(input);
+                        free(result);
                         return WRONG_ARGUMENT_INPUT;
                     }
                 }
                 break;
             case 'i':
-                input = malloc(sizeof(PPMFile));
-
+                input = NULL; // TODO:
                 if (input == NULL) {
                     fprintf(stderr, "Memory allocation failed\n");
-                    exit(FAILED_ALLOCATION);
+                    //exit(FAILED_ALLOCATION); TODO: define the errors
                 }
 
                 //TODO: init input
@@ -103,7 +102,7 @@ int main(int argc, char *argv[]) {
                 necessary--;
                 break;
             case 'o':
-                result = malloc(sizeof(PPMFile));
+                result = NULL; //TODO: Define the output
 
                 if (result == NULL) {
                     fprintf(stderr, "Memory allocation failed\n");
@@ -120,15 +119,15 @@ int main(int argc, char *argv[]) {
                     if (parsed != 3) {
                         fprintf(stderr, "Pleaser provide 3 coefficient values\n");
                         printUsage();
-                        freeAll(input);
-                        freeAll(result);
+                        free(input);
+                        free(result);
                         return INVALID_ARGUMENT_FORMAT;
                     }
                 } else {
                     fprintf(stderr, "Please provide the values for the coefficients\n");
                     printUsage();
-                    freeAll(input);
-                    freeAll(result);
+                    free(input);
+                    free(result);
                     return MISSING_ARGUMENT;
                 }
                 break;
@@ -140,8 +139,8 @@ int main(int argc, char *argv[]) {
                 break;
             default:
                 printUsage();
-                freeAll(input);
-                freeAll(result);
+                free(input);
+                free(result);
                 return WRONG_ARGUMENT;
         }
     }
@@ -150,13 +149,13 @@ int main(int argc, char *argv[]) {
     if (necessary != 0 || argc == 1) {
         fprintf(stderr, "Not enough arguments\n");
         printUsage();
-        freeAll(input);
-        freeAll(output);
+        free(input);
+        free(result);
         return NOT_ENOUGH_ARGUMENTS;
     }
 
     // TODO: CHECK FOR a,b,c not being 0
-    if () {}
+    //if () {}
 
     if (version == 0) {
         if (benchmarking) {
@@ -216,7 +215,7 @@ int main(int argc, char *argv[]) {
 
     if (correctness) {
 
-        PPMFile *referenceResult = malloc(sizeof(PPMFile)); //TODO: just for logic purposes
+        struct PPMFile *referenceResult = NULL; //TODO: just for logic purposes
 
         if (referenceResult == NULL) {
             fprintf(stderr, "Memory allocation failed\n");
@@ -272,6 +271,6 @@ void printUsage() {
            "        -h, --help\n"
            "                Prints this help screen.\n"
            "        -k, --correctness\n"
-           "                Compare the results between the two implementations.
+           "                Compares the results between the two implementations."
            );
 }
