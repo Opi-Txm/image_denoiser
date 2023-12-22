@@ -16,6 +16,11 @@ Applies the Laplace Filter to a greyed image.
 void laplaceFilter(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height);
 
 /*
+Applies Laplace Filter to a greyed image in SIMD
+*/
+void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height);
+
+/*
 Blurs the image.
 */
 void blur(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height);
