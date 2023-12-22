@@ -5,78 +5,68 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include <unistd.h>
-struct PPMFile {
-    int width;          // Width of the image
-    int height;         // Height of the image
-    int maxColorValue;  // Maximum color value
-};
+#include "FileIO.h"
 
+// Reads the content of a PPM File and returns it as a pointer to the raw data  
+struct PPMFile readPPMFile(const char* filepath) {
+    FILE* ppmFilePtr = fopen(filepath, "rb");
+    struct PPMFile ppmFile;
 
-uint8_t* readFile(const char* path) {
-    FILE* file = fopen(path, "rb");
-
-    if (file == NULL) {
-        fprintf(stderr, "ERROR: The following path does not exist!: %s\n", path);
-        return NULL;
-    }
-    if (access(path, R_OK)) {
-        fclose(file);
-        fprintf(stderr, "ERROR: No access rights!\n");
-        return NULL;
+    // Check if the ppm file doesn't exist
+    if (ppmFilePtr == NULL) {
+        fprintf(stderr, "ERROR: The following file does not exist!: %s\n", filepath);
+        exit(1);
     }
 
-    struct stat s;
-    stat(path, &s);
-    uint8_t* rawfile = (uint8_t *)malloc(s.st_size);
-    fread(rawfile, sizeof(char) , s.st_size, file);
+    // Check if the ppm file is readable
+    if (access(filepath, R_OK)) {
+        fclose(ppmFilePtr);
+        fprintf(stderr, "ERROR: Not allowed to read this file!\n");
+        exit(1);
+    }
 
-    fclose(file);
+    // Check for the magic number 
+    char magic_number[2];
+    magic_number[0] = fgetc(ppmFilePtr);
+    magic_number[1] = fgetc(ppmFilePtr);
 
-    return rawfile;
+    if (magic_number[0] != 'P' || magic_number[1] != '6') {
+        fprintf(stderr, "Error: Wrong data format!\n");
+        exit(1);
+    }
 
+    // Get width and height and maxColorValue (whitespaces are skipped automatically from fscanf)
+    fscanf(ppmFilePtr, "%d %d %d", &ppmFile.width, &ppmFile.height, &ppmFile.maxColorValue);
+
+    // Skip the newline after the maxColorValue
+    fgetc(ppmFilePtr);
+
+    // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
+    size_t rawDataSize = ppmFile.width * ppmFile.height * 3;
+    ppmFile.data = (uint8_t*) malloc(rawDataSize);
+    fread(ppmFile.data, rawDataSize, 1, ppmFilePtr);
+    fclose(ppmFilePtr);
+    return ppmFile;
 }
 
-bool writeFile(const char* path, char* string, size_t size) {
-    FILE* file = fopen(path, "wb");
-    if (file == NULL) {
-        fprintf(stderr, "ERROR: The following path does not exist!: %s\n", path);
+bool writePGMFile(const char* filepath, char* data, size_t width, size_t height, size_t maxColorValue) {
+    FILE* pgmFilePtr = fopen(filepath, "w");
+
+    // Check if the pgm file doesn't exist
+    if (pgmFilePtr == NULL) {
+        fprintf(stderr, "ERROR: The following file does not exist!: %s\n", filepath);
         return false;
     }
-    if (access(path, W_OK))
-    {
-        fclose(file);
-        fprintf(stderr, "ERROR: No access rights!\n");
-        return NULL;
+
+    // Write the magic number and the other metadata in the header  
+    fprintf(pgmFilePtr, "P2\n%ld %ld\n%ld\n", width, height, maxColorValue);
+
+    // Write the pixel values 
+    for(size_t i = 0; i < (width * height); i++) {
+        fprintf(pgmFilePtr, "%c", data[i]);
     }
-    
-    fwrite(string , sizeof(char), size, file);
-    fclose(file);
-    return true;   
+
+    fclose(pgmFilePtr);
+    return true;
 }
 
-
-void readHeader(const uint8_t* file, struct PPMFile* ppmFile) {
-    if(file == NULL){
-        fprintf(stderr, "Error: Data not found\n");
-        return;
-    }
-    if (file[0] != 'P' || file[1] != '6') {
-        fprintf(stderr, "Error: Wrong data format!\n");
-        return;
-    }
-    int offset = 2; //skip magic number
-
-    //The following while loops is meant to skip the whitespaces, as it can be blanks, TABs, CRs, LFs
-    while (file[offset] == ' ') {
-        offset++;
-    }
-    sscanf(file + offset, "%d", &ppmFile->width);
-
-    while (file[offset] == ' ') {
-        offset++;
-    }
-    sscanf(file + offset, "%d", &ppmFile->height);
-
-    //The Data we have to work on, which is 24bpp PPM (P6), has a constant maxColorValue of 255.
-    ppmFile->maxColorValue = 255;
-}

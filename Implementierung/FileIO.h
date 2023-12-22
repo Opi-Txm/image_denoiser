@@ -6,10 +6,15 @@
 #include <stdint.h>
 #include <unistd.h>
 
-struct PPMFile;
 
-uint8_t* readFile(const char* path);
+struct PPMFile {
+    int width;
+    int height;
+    int maxColorValue;
+    uint8_t* data;
+};
 
-bool writeFile(const char* path, char* string, size_t size);
+struct PPMFile readPPMFile(const char* filepath);
 
-void readHeader(const uint8_t* file, struct PPMFile* ppmFile);
+bool writePGMFile(const char* path, char* data, size_t width, size_t height, size_t maxColorValue);
+
