@@ -49,13 +49,13 @@ struct PPMFile readPPMFile(const char* filepath) {
     return ppmFile;
 }
 
-bool writePGMFile(const char* filepath, char* data, size_t width, size_t height, size_t maxColorValue) {
+void writePGMFile(const char* filepath, uint8_t* data, size_t width, size_t height, size_t maxColorValue) {
     FILE* pgmFilePtr = fopen(filepath, "w");
 
     // Check if the pgm file doesn't exist
     if (pgmFilePtr == NULL) {
         fprintf(stderr, "ERROR: The following file does not exist!: %s\n", filepath);
-        return false;
+        exit(1);
     }
 
     // Write the magic number and the other metadata in the header  
@@ -67,6 +67,5 @@ bool writePGMFile(const char* filepath, char* data, size_t width, size_t height,
     }
 
     fclose(pgmFilePtr);
-    return true;
 }
 

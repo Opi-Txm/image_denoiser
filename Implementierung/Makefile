@@ -7,7 +7,7 @@ CFLAGS=-O0 -Wall -Wextra -Wpedantic
 .PHONY: main clean  
 
 all: denoise
-denoise: main.c
+denoise: main.c ImageDenoiser.c FileIO.c
 	$(CC) $(CFLAGS) -o $@ $^
 clean:
 	rm -f main
