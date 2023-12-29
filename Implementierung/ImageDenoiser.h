@@ -6,6 +6,7 @@
 #include <x86intrin.h>
 #include <xmmintrin.h>
 #include <smmintrin.h>
+#include <math.h>
 
 
 

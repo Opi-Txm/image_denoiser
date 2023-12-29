@@ -351,13 +351,13 @@ void blur_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t heigh
 
 void denoise(const uint8_t* img, size_t width, size_t height,float a, float b, float c, uint8_t* tmp1, uint8_t* tmp2, uint8_t* result) {
     //make image grey: Q and store in uint8_t* img. img is PGM!
-    grey_V1(img, result, width, height, a, b, c);
+    grey(img, result, width, height, a, b, c);
 
     //apply laplace filter to grey image: Q^L and store in uint8_t* tmp1
-    laplaceFilter_V1(result, tmp1, width, height);
+    laplaceFilter(result, tmp1, width, height);
 
     //apply blur: Q^W and store in uint8_t* tmp2
-    blur_V1(result, tmp2, width, height);
+    blur(result, tmp2, width, height);
     
     //combine img, tmp1 and tmp2 like in the last formula of GRA 2.1 Funktionsweise and store it in uint8_t* result  
 
@@ -369,7 +369,7 @@ void denoise(const uint8_t* img, size_t width, size_t height,float a, float b, f
 void denoise_V1(const uint8_t* img, size_t width, size_t height,float a, float b, float c, uint8_t* tmp1, uint8_t* tmp2, uint8_t* result) {
     grey_V1(img, result, width, height, a, b, c);
     laplaceFilter_V1(result, tmp1, width, height);
-    blur(result, tmp2, width, height);
+    blur_V1(result, tmp2, width, height);
     for (size_t i = 0; i < width * height; i++) {
         result[i] = tmp1[i] / 1020 * img[i] + (1 - tmp1[i] / 1020) * tmp2[i];
     }
@@ -381,7 +381,7 @@ void denoise_V1(const uint8_t* img, size_t width, size_t height,float a, float b
 
 
 uint8_t greyPixel(uint8_t red, uint8_t green, uint8_t blue, float a, float b, float c) {
-    return (uint8_t)((a*red + b*green + c*blue) / (a+b+c));
+    return (uint8_t)(lroundf((a*red + b*green + c*blue) / (a+b+c)));
 }
 
 __m128i difference16bitValues(__m128i a, __m128i b) {
