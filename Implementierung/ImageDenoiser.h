@@ -51,11 +51,6 @@ Converts a pixel grey, using the ITU-R BT.601 standards.
 uint8_t greyPixel(uint8_t red, uint8_t green, uint8_t blue, float a, float b, float c);
 
 /*
-Compares the images for testing.
-*/
-void compare(const uint8_t* img1, const uint8_t* img2, size_t width, size_t height);
-
-/*
 Calculates the difference of a and b, where both __m128i contains 8 16bit values.
 */
 __m128i difference16bitValues(__m128i a, __m128i b);
