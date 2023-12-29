@@ -2,7 +2,7 @@
 CC = gcc 
 
 # Flags 
-CFLAGS=-O0 -Wall -Wextra -Wpedantic 
+CFLAGS=-O0 -Wall -Wextra -Wpedantic -msse4.1
 
 .PHONY: main clean  
 
