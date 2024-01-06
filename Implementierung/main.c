@@ -1,14 +1,17 @@
 //
 // Created by markus on 12/17/23.
 //
+
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdio.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include <time.h>
 #include "FileIO.h"
 #include "ImageDenoiser.h"
+#include <time.h>
 
 #define OPTIONAL_ARGUMENT_IS_PRESENT \
     ((optarg == NULL && optind < argc && argv[optind][0] != '-') \
@@ -38,7 +41,6 @@ int main(int argc, char *argv[]) {
                                     {"coeffs", required_argument, NULL, 'c'},
                                     {"help",        no_argument,       NULL, 'h'},
                                     {"correctness", no_argument,       NULL, 'k'}};
-
     // Inverse counter for the necessary arguments
     int necessary = 2;
 
@@ -233,7 +235,7 @@ int main(int argc, char *argv[]) {
             printf("Not the same at: %li", i);
             exit(1);
         } else {
-            printf("They are the same picture.");
+            printf("They are the same picture.\n");
         }
     
         free(a);
@@ -246,12 +248,13 @@ int main(int argc, char *argv[]) {
     free(tempVar1);
     free(tempVar2);
     free(denoisedRawData);
+    free(inputPPMFileStruct.data);
     return 0;
 }
 
 void printUsage() {
     printf("Usage\n"
-           "./denoise [-V<number>] [-B[<number>]] -a <filename> -b <filename> -o <filename>\n\n"
+           "./denoise [-V<number>] [-B[<number>]] -c <float>,<float>,<float> -k -h -o <filename> <filename>\n\n"
 
            "OPTIONS:\n"
            "-V<number>, --version=<number>\n"
@@ -260,20 +263,20 @@ void printUsage() {
 
            "-B[<number>], --benchmark[=<number>]\n"
            "When set, the runtime of the implementation will be recorded. The optional <number> specifies the number of calls for which the runtime will be recorded.\n\n"
-           
-           "-i <filename>, --input=<filename>\n"
-           "Use the file named <filename> as an input for the image.\n\n"
-
-           "-o <filename>, --output=<filename>\n"
-           "Use the file named <filename> as an output file for the resulting image\n\n"
 
            "-c <float number>,<float number>,<float number>; --coeffs <float number>,<float number>,<float number>\n"
            "Use the coefficients defined in the command line, instead of the standard values\n\n"
 
+           "-k, --correctness\n"
+           "Compares the results between the two implementations.\n"
+
            "-h, --help\n"
            "Prints this help screen.\n\n"
 
-           "-k, --correctness\n"
-           "Compares the results between the two implementations."
+            "-o <filename>, --output=<filename>\n"
+           "Use the file named <filename> as an output file for the resulting image\n\n"
+           
+           "<filename>\n"
+           "The name of the input file.\n"
            );
 }
