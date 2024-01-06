@@ -26,7 +26,9 @@ void printUsage();
 int main(int argc, char *argv[]) {
 
     char* inputFilePath = "";
-    char* outputFilePath = ""; 
+    char* outputFilePath = "";
+     
+    struct PPMFile inputPPMFileStruct;
 
     int opt;
     struct option long_options[] = {{"version",     optional_argument, NULL, 'V'},
@@ -61,7 +63,10 @@ int main(int argc, char *argv[]) {
     bool correctness = false;
 
     // Loop for processing the command line input
-    while ((opt = getopt_long(argc, argv, "V:B::i:o:c:::hk", long_options, NULL)) != -1) {
+    while (optind < argc) {
+
+        if((opt = getopt_long(argc, argv, "V:B::i:o:c:::hk", long_options, NULL)) != -1) {
+
         switch (opt) {
             case 'V':
                 if (strcmp(optarg, "0") != 0 || strcmp(optarg, "1") != 0) {
@@ -72,27 +77,17 @@ int main(int argc, char *argv[]) {
                     exit(1);
                 }
                 break;
-            // case 'B':
-                // benchmarking = true;
-                // if (OPTIONAL_ARGUMENT_IS_PRESENT) {
-                //     iter = true;
-                //     iterations = atoi(optarg);
-                //     if (iterations < 0) {
-                //         fprintf(stderr, "The number of calls needs to be > 0\n");
-                //         printUsage();
-                //         free(input);
-                //         free(result);
-                //         return WRONG_ARGUMENT_INPUT;
-                //     }
-                // }
-                // break;
-            case 'i':
-                inputFilePath = optarg; // Get the input file path 
-                if (!strcmp(inputFilePath, "")) {
-                    fprintf(stderr, "Invalid Path!\n");
-                    //exit(FAILED_ALLOCATION); TODO: define the errors
+            case 'B':
+                benchmarking = true;
+                if (OPTIONAL_ARGUMENT_IS_PRESENT) {
+                    iter = true;
+                    iterations = atoi(optarg);
+                    if (iterations <= 0) {
+                        fprintf(stderr, "The number of calls needs to be > 0\n");
+                        printUsage();
+                        exit(1);
+                    }
                 }
-                necessary--;
                 break;
             case 'o':
                 outputFilePath = optarg; // Define the output name/path of the file
@@ -123,6 +118,20 @@ int main(int argc, char *argv[]) {
                 printUsage();
                 exit(1);
         }
+    } else {
+        inputFilePath = argv[optind]; // Get the input file path 
+                
+        if (!strcmp(inputFilePath, "")) {
+            fprintf(stderr, "Invalid Path!\n");
+            exit(1);
+        }
+
+        // Reading the PPM input file into a PPMFile structure 
+        inputPPMFileStruct = readPPMFile(inputFilePath);
+
+        necessary--;
+        optind++;
+        }
     }
 
     // Print help when no arguments are present or the necessary arguments are not present
@@ -139,91 +148,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // if (version == 0) {
-    //     if (benchmarking) {
-    //         if (!iter) {
-    //             struct timespec start;
-    //             clock_gettime(CLOCK_MONOTONIC, &start);
-    //             denoise_V1(); //TODO: Define the parameters used in the function
-    //             struct timespec end;
-    //             clock_gettime(CLOCK_MONOTONIC, &end);
-    //             double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-    //             printf("done after %f seconds\n", time);
-    //         } else {
-    //             struct timespec start;
-    //             clock_gettime(CLOCK_MONOTONIC, &start);
-    //             for (int i = 1; i <= iterations; i++) {
-    //                 denoise_V1();//TODO: Define the parameters used in the function
-    //             }
-    //             struct timespec end;
-    //             clock_gettime(CLOCK_MONOTONIC, &end);
-    //             double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-    //             double average = time / iterations;
-    //             printf("done after %f seconds on average (measured on %d iterations)\n", average, iterations);
-    //         }
-    //     } else {
-    //         denoiose_V1();//TODO: Same here
-    //     }
-    // } else if (version == 1) {
-    //     if (benchmarking) {
-    //         if (!iter) {
-    //             struct timespec start;
-    //             clock_gettime(CLOCK_MONOTONIC, &start);
-    //             denoise_V2();//TODO: Define the parameters used in the function
-    //             struct timespec end;
-    //             clock_gettime(CLOCK_MONOTONIC, &end);
-    //             double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-    //             printf("done after %f seconds\n", time);
-    //         } else {
-    //             struct timespec start;
-    //             clock_gettime(CLOCK_MONOTONIC, &start);
-    //             for (int i = 1; i <= iterations; i++) {
-    //                 denoise_V2();//TODO: Same here
-    //             }
-    //             struct timespec end;
-    //             clock_gettime(CLOCK_MONOTONIC, &end);
-    //             double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-    //             double average = time / iterations;
-    //             printf("done after %f seconds on average (measured on %d iterations)\n", average, iterations);
-    //         }
-    //     } else {
-    //         denoise_V2();//TODO: Same here
-    //     }
-    // } else {
-    //     fprintf(stderr, "Please provide 0 or 1 as the implementation version\n");
-    //     printUsage();
-    //     exit(WRONG_ARGUMENT_INPUT);
-    // }
-
-    // if (correctness) {
-
-    //     struct PPMFile *referenceResult = NULL; //TODO: just for logic purposes
-
-    //     if (referenceResult == NULL) {
-    //         fprintf(stderr, "Memory allocation failed\n");
-    //         exit(FAILED_ALLOCATION);
-    //     }
-
-    //     if (version == 0) {
-    //         denoise_V2(); //TODO: define the correct outputType
-    //     } else {
-    //         denoise_V1(); //TODO: define the correct outputType
-    //     }
-    //     if (equals(result, referenceResult)) {
-    //         printf("The result for both implementations is the same\n");
-    //     } else {
-    //         printf("The results differ between the two implementations\n");
-    //     }
-
-    //     print_result_to_file(referenceResult, "reference"); //TODO: only for logic purposes(use the correct output method)
-
-    //     freeAll(referenceResult);
-
-    // }
-
-    // Reading the PPM input file into a PPMFile structure 
-    struct PPMFile inputPPMFileStruct = readPPMFile(inputFilePath);
-
     // Temporary variables 
     uint8_t* tempVar1;
     uint8_t* tempVar2;
@@ -233,11 +157,90 @@ int main(int argc, char *argv[]) {
     // The final output raw data 
     uint8_t* denoisedRawData = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
 
-    // Main denoise function version 0
-    denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData);
+    if (version == 0) {
+        if (benchmarking) {
+            if (!iter) {
+                struct timespec start;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                // Main denoise function version 0
+                denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
+                struct timespec end;
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
+                printf("Done after %f seconds.\n", time);
+            } else {
+                struct timespec start;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                for (int i = 1; i <= iterations; i++) {
+                    denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
+                }
+                struct timespec end;
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
+                double average = time / iterations;
+                printf("Done after %f seconds on average (measured on %d iterations)\n", average, iterations);
+            }
+        } else {
+            denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
+        }
+    } else if (version == 1) {
+        if (benchmarking) {
+            if (!iter) {
+                struct timespec start;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                // Denoise function version 1
+                denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
+                struct timespec end;
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
+                printf("Done after %f seconds.\n", time);
+            } else {
+                struct timespec start;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                for (int i = 1; i <= iterations; i++) {
+                    denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
+                }
+                struct timespec end;
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
+                double average = time / iterations;
+                printf("Done after %f seconds on average (measured on %d iterations)\n", average, iterations);
+            }
+        } else {
+            denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData);
+        }
+
+    } else {
+        fprintf(stderr, "Please provide 0 or 1 as the implementation version.\n");
+        printUsage();
+        exit(1);
+    }
 
     // write the denoised data back into a pgm file 
     writePGMFile(outputFilePath, denoisedRawData, inputPPMFileStruct.width, inputPPMFileStruct.height, inputPPMFileStruct.maxColorValue);
+
+
+    // Check for correctness
+    if (correctness) {
+        uint8_t* a = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
+        denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, a);
+
+        uint8_t* b = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
+        denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
+    
+        for (size_t i = 0; i < sizeof(a); i++) {
+        if (a[i] != b[i]) {
+            printf("Not the same at: %li", i);
+            exit(1);
+        } else {
+            printf("They are the same picture.");
+        }
+    
+        free(a);
+        free(b);
+        exit(0); // Success
+        }
+    }
 
     // Free all the malloced space 
     free(tempVar1);

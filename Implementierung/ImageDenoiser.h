@@ -42,6 +42,11 @@ The main function using the 3 methods to denoise the given image.
 void denoise(const uint8_t* img, size_t width, size_t height,float a, float b, float c,uint8_t* tmp1, uint8_t* tmp2,uint8_t* result);
 
 /*
+Denoise function version 1 (SIMD)
+*/
+void denoise_V1(const uint8_t* img, size_t width, size_t height,float a, float b, float c,uint8_t* tmp1, uint8_t* tmp2,uint8_t* result);
+
+/*
 -------------------------------------------------------------Helper Functions------------------------------------------------------------------------
 */
 
