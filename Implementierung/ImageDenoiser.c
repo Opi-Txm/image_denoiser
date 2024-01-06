@@ -14,7 +14,7 @@ void grey_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t heigh
     __m128 red, green, blue, div = _mm_set1_ps(a+b+c);
     __m128i res;
     size_t i;
-    for (i = 0; i + 4 <= width * height; i += 4) {
+    for (i = 0; i + 12 < width * height; i += 4) {
         //store the rgb values of the next 4 pixels
         red = _mm_set_ps(img_in[3*i+9], img_in[3*i+6], img_in[3*i+3], img_in[3*i]);
         green = _mm_set_ps(img_in[3*i+10], img_in[3*i+7], img_in[3*i+4], img_in[3*i+1]);
@@ -77,10 +77,15 @@ void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, siz
 
     for (size_t y = 0; y < height; y++) {
         //Edge case: first pixel
-        img_out[y*width] = (uint8_t) abs(img_in[y*width + 1] + img_in[(y+1)*width] - img_in[y*width]*4);
+        uint8_t tmpTop = 0;
+        if (y + 1 < height) {
+            tmpTop = img_in[(y+1)*width];
+        }
+        img_out[y*width] = (uint8_t) abs(img_in[y*width + 1] + tmpTop - img_in[y*width]*4);
+        
         
         size_t x;
-        for (x = 1; x + 16 < width; x+=16) {
+        for (x = 1; x + 17 < width; x+=16) {
             //load 16 uint8_t values from the image.       
             //unpack the 16 uint8_t values to 2 * 8 uint16_t values.
 
@@ -126,7 +131,7 @@ void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, siz
 
             //convert the 16bit values to 8bit values and store them in img_out.
             midHi = _mm_packs_epi16(midLo, midHi);
-            _mm_storeu_si128((__m128i*)img_out, midHi);
+            _mm_storeu_si128((__m128i*)(img_out + y*width+x), midHi);
         }
         //Edge case: Remaining pixels at the right less than 16 in total.
         for (;x < width; x++) {
@@ -254,7 +259,7 @@ void blur_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t heigh
             // Edge case: left column
             img_out[y*width] = (uint8_t) ((4 * img_in[y*width] + 2 * img_in[y*width + 1] + 2 * img_in[(y+1)*width] + 2 * img_in[(y-1)*width] + img_in[(y+1)*width + 1] + img_in[(y-1)*width + 1]) / 12);
             
-            for (x = 1; x + 16 < width; x+=16) {
+            for (x = 1; x + 17 < width; x+=16) {
                 //load 16 uint8_t values from the image.       
                 //unpack the 16 uint8_t values to 2 * 8 uint16_t values.
                 
