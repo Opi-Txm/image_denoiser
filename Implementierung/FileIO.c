@@ -36,15 +36,21 @@ struct PPMFile readPPMFile(const char* filepath) {
     }
 
     // Get width and height and maxColorValue (whitespaces are skipped automatically from fscanf)
-    fscanf(ppmFilePtr, "%d %d %d", &ppmFile.width, &ppmFile.height, &ppmFile.maxColorValue);
-
+    if (fscanf(ppmFilePtr, "%d %d %d", &ppmFile.width, &ppmFile.height, &ppmFile.maxColorValue) != 3) {
+        printf("Error: Could not read the header successfully.");
+        exit(1);
+    }
+    
     // Skip the newline after the maxColorValue
     fgetc(ppmFilePtr);
 
     // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
     size_t rawDataSize = ppmFile.width * ppmFile.height * 3;
     ppmFile.data = (uint8_t*) malloc(rawDataSize);
-    fread(ppmFile.data, rawDataSize, 1, ppmFilePtr);
+    if (fread(ppmFile.data, 1, rawDataSize, ppmFilePtr) != rawDataSize) {
+        printf("Error: Could not read the image data successfully.\n");
+        exit(1);
+    }
     fclose(ppmFilePtr);
     return ppmFile;
 }

@@ -1,7 +1,3 @@
-//
-// Created by markus on 12/17/23.
-//
-
 #define _POSIX_C_SOURCE 199309L
 
 #include <stdio.h>
@@ -31,7 +27,7 @@ int main(int argc, char *argv[]) {
     char* inputFilePath = "";
     char* outputFilePath = "";
      
-    struct PPMFile inputPPMFileStruct;
+    struct PPMFile inputPPMFileStruct = {0, 0, 0, NULL};
 
     int opt;
     struct option long_options[] = {{"version",     optional_argument, NULL, 'V'},
@@ -66,73 +62,71 @@ int main(int argc, char *argv[]) {
 
     // Loop for processing the command line input
     while (optind < argc) {
-
         if((opt = getopt_long(argc, argv, "V:B::i:o:c:::hk", long_options, NULL)) != -1) {
-
-        switch (opt) {
-            case 'V':
-                if (strcmp(optarg, "0") != 0 || strcmp(optarg, "1") != 0) {
-                    version = atoi(optarg);
-                } else {
-                    fprintf(stderr, "Please provide 0 or 1 as the version\n");
-                    printUsage();
-                    exit(1);
-                }
-                break;
-            case 'B':
-                benchmarking = true;
-                if (OPTIONAL_ARGUMENT_IS_PRESENT) {
-                    iter = true;
-                    iterations = atoi(optarg);
-                    if (iterations <= 0) {
-                        fprintf(stderr, "The number of calls needs to be > 0\n");
+            switch (opt) {
+                case 'V':
+                    if (strcmp(optarg, "0") != 0 || strcmp(optarg, "1") != 0) {
+                        version = atoi(optarg);
+                    } else {
+                        fprintf(stderr, "Please provide 0 or 1 as the version\n");
                         printUsage();
                         exit(1);
                     }
-                }
-                break;
-            case 'o':
-                outputFilePath = optarg; // Define the output name/path of the file
-                necessary--;
-                break;
-            case 'c':
-                if (OPTIONAL_ARGUMENT_IS_PRESENT) {
-                    int parsed = sscanf(optarg, "%f,%f,%f", &coeffA, &coeffB, &coeffC);
+                    break;
+                case 'B':
+                    benchmarking = true;
+                    if (OPTIONAL_ARGUMENT_IS_PRESENT) {
+                        iter = true;
+                        iterations = atoi(optarg);
+                        if (iterations <= 0) {
+                            fprintf(stderr, "The number of calls needs to be > 0\n");
+                            printUsage();
+                            exit(1);
+                        }
+                    }
+                    break;
+                case 'o':
+                    outputFilePath = optarg; // Define the output name/path of the file
+                    necessary--;
+                    break;
+                case 'c':
+                    if (OPTIONAL_ARGUMENT_IS_PRESENT) {
+                        int parsed = sscanf(optarg, "%f,%f,%f", &coeffA, &coeffB, &coeffC);
 
-                    if (parsed != 3) {
-                        fprintf(stderr, "Please provide 3 coefficient values.\n");
+                        if (parsed != 3) {
+                            fprintf(stderr, "Please provide 3 coefficient values.\n");
+                            printUsage();
+                            exit(1);
+                        }
+                    } else {
+                        fprintf(stderr, "Please provide the values for the coefficients!\n");
                         printUsage();
                         exit(1);
                     }
-                } else {
-                    fprintf(stderr, "Please provide the values for the coefficients!\n");
+                    break;
+                case 'h':
+                    printUsage();
+                    return 0;
+                case 'k':
+                    correctness = true;
+                    break;
+                default:
                     printUsage();
                     exit(1);
-                }
-                break;
-            case 'h':
-                printUsage();
-                return 0;
-            case 'k':
-                correctness = true;
-                break;
-            default:
-                printUsage();
+            }
+        } else {
+            inputFilePath = argv[optind]; // Get the input file path 
+                    
+            if (!strcmp(inputFilePath, "")) {
+                fprintf(stderr, "Invalid Path!\n");
                 exit(1);
-        }
-    } else {
-        inputFilePath = argv[optind]; // Get the input file path 
-                
-        if (!strcmp(inputFilePath, "")) {
-            fprintf(stderr, "Invalid Path!\n");
-            exit(1);
-        }
+            }
 
-        // Reading the PPM input file into a PPMFile structure 
-        inputPPMFileStruct = readPPMFile(inputFilePath);
+            // Reading the PPM input file into a PPMFile structure 
+            inputPPMFileStruct = readPPMFile(inputFilePath);
 
-        necessary--;
-        optind++;
+            necessary--;
+            optind++;
         }
     }
 
@@ -154,10 +148,21 @@ int main(int argc, char *argv[]) {
     uint8_t* tempVar1;
     uint8_t* tempVar2;
     tempVar1 = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
+    if (tempVar1 == NULL) {
+        printf("Error: No memory could be allocated for \"tempVar1\" in main.");
+        exit(1);
+    }
     tempVar2 = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
-
+    if (tempVar2 == NULL) {
+        printf("Error: No memory could be allocated for \"tempVar2\" in main.");
+        exit(1);
+    }
     // The final output raw data 
     uint8_t* denoisedRawData = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
+    if (denoisedRawData == NULL) {
+        printf("Error: No memory could be allocated for \"denoisedRawData\" in main.");
+        exit(1);
+    }
 
     if (version == 0) {
         if (benchmarking) {
@@ -225,19 +230,32 @@ int main(int argc, char *argv[]) {
     // Check for correctness
     if (correctness) {
         uint8_t* a = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
+        if (a == NULL) {
+            printf("Error: No memory could be allocated for \"a\" in main/correctness.");
+            exit(1);
+        }
         denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, a);
 
         uint8_t* b = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
+        if (b == NULL) {
+            printf("Error: No memory could be allocated for \"b\" in main/correctness.");
+            exit(1);
+        }
         denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
-    
+        
         for (size_t i = 0; i < sizeof(a); i++) {
         if (a[i] != b[i]) {
-            printf("Not the same at: %li", i);
+            printf("Not the same at: %li\n", i);
+            free(tempVar1);
+            free(tempVar2);
+            free(denoisedRawData);
+            free(inputPPMFileStruct.data);
+            free(a);
+            free(b);
             exit(1);
         } else {
             printf("They are the same picture.\n");
         }
-    
         free(a);
         free(b);
         exit(0); // Success

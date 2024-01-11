@@ -2,7 +2,7 @@
 CC = gcc 
 
 # Flags 
-CFLAGS=-O0 -Wall -Wextra -Wpedantic -msse4.1
+CFLAGS=-O2 -Wall -Wextra -Wpedantic -msse4.1
 
 LIBS=-lm
 
