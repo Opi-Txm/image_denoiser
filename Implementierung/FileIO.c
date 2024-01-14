@@ -35,19 +35,50 @@ struct PPMFile readPPMFile(const char* filepath) {
         exit(1);
     }
 
-    // Get width and height and maxColorValue (whitespaces are skipped automatically from fscanf)
-    if (fscanf(ppmFilePtr, "%d %d %d", &ppmFile.width, &ppmFile.height, &ppmFile.maxColorValue) != 3) {
+    // Skip the whitespace after the magic number
+    fgetc(ppmFilePtr);
+
+    // Skip possible comment after the magic number 
+    skipComments(ppmFilePtr);
+
+    // Read the width
+    if(fscanf(ppmFilePtr, "%d", &ppmFile.width) != 1) {
         printf("Error: Could not read the header successfully.");
         exit(1);
     }
-    
-    // Skip the newline after the maxColorValue
+
+    // Skip the whitespace after the width
+    fgetc(ppmFilePtr);
+
+    // Skip possible comment after the width 
+    skipComments(ppmFilePtr);
+
+    // Read the height
+    if(fscanf(ppmFilePtr, "%d", &ppmFile.height) != 1) {
+        printf("Error: Could not read the header successfully.");
+        exit(1);
+    }
+
+    // Skip the whitespace after the height
+    fgetc(ppmFilePtr);
+
+    // Skip possible comment after the height 
+    skipComments(ppmFilePtr);
+
+    // Read maxColorValue
+    if(fscanf(ppmFilePtr, "%d", &ppmFile.maxColorValue) != 1) {
+        printf("Error: Could not read the header successfully.");
+        exit(1);
+    }
+
+    // Skip the whitespace after the maxColorValue
     fgetc(ppmFilePtr);
 
     // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
     size_t rawDataSize = ppmFile.width * ppmFile.height * 3;
     ppmFile.data = (uint8_t*) malloc(rawDataSize);
-    if (fread(ppmFile.data, 1, rawDataSize, ppmFilePtr) != rawDataSize) {
+    size_t sz = fread(ppmFile.data, 1, rawDataSize, ppmFilePtr);
+    if (sz != rawDataSize) {
         printf("Error: Could not read the image data successfully.\n");
         exit(1);
     }
@@ -73,5 +104,19 @@ void writePGMFile(const char* filepath, uint8_t* data, size_t width, size_t heig
     }
 
     fclose(pgmFilePtr);
+}
+
+// Skips all characters after a # and before a newline
+void skipComments(FILE* ppmFilePtr) {
+    char c;
+    if((c = fgetc(ppmFilePtr)) == '#') {
+        // Go through the comment until you find a newline, when a newline is found the comment ends
+        while((c = fgetc(ppmFilePtr)) != '\n') {
+            printf("%c", c);
+        }
+    } else {
+        ungetc(c, ppmFilePtr);
+    }
+       
 }
 
