@@ -27,4 +27,7 @@ void writePGMFile(const char* path, uint8_t* data, size_t width, size_t height, 
 Skips the comments
 */
 void skipComments(FILE* ppmFilePtr);
-
+/*
+Skips the whitespaces
+*/
+void skipWhitespaces(FILE* ppmFilePtr);

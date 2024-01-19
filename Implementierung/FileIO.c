@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "FileIO.h"
 
 // Reads the content of a PPM File and returns it as a pointer to the raw data  
@@ -35,11 +36,14 @@ struct PPMFile readPPMFile(const char* filepath) {
         exit(1);
     }
 
-    // Skip the whitespace after the magic number
-    fgetc(ppmFilePtr);
+    // Skip the whitespaces after the magic number
+    skipWhitespaces(ppmFilePtr);
 
     // Skip possible comment after the magic number 
     skipComments(ppmFilePtr);
+
+    // Skip the whitespaces after the comment
+    skipWhitespaces(ppmFilePtr);
 
     // Read the width
     if(fscanf(ppmFilePtr, "%zu", &ppmFile.width) != 1) {
@@ -47,8 +51,8 @@ struct PPMFile readPPMFile(const char* filepath) {
         exit(1);
     }
 
-    // Skip the whitespace after the width
-    fgetc(ppmFilePtr);
+    // Skip the whitespaces after the width
+    skipWhitespaces(ppmFilePtr);
 
     // Skip possible comment after the width 
     skipComments(ppmFilePtr);
@@ -60,7 +64,7 @@ struct PPMFile readPPMFile(const char* filepath) {
     }
 
     // Skip the whitespace after the height
-    fgetc(ppmFilePtr);
+    skipWhitespaces(ppmFilePtr);
 
     // Skip possible comment after the height 
     skipComments(ppmFilePtr);
@@ -71,8 +75,8 @@ struct PPMFile readPPMFile(const char* filepath) {
         exit(1);
     }
 
-    // Skip the whitespace after the maxColorValue
-    fgetc(ppmFilePtr);
+    // Skip the whitespaces after the maxColorValue
+    skipWhitespaces(ppmFilePtr);
 
     // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
     //rawDataSize could technically overflow as it stores the result of a multipication of 2 size_t values, but having an image of 16 exabytes is not realistic so I'll leave it like this.
@@ -112,12 +116,16 @@ void skipComments(FILE* ppmFilePtr) {
     char c;
     if((c = fgetc(ppmFilePtr)) == '#') {
         // Go through the comment until you find a newline, when a newline is found the comment ends
-        while((c = fgetc(ppmFilePtr)) != '\n') {
-            printf("%c", c);
-        }
+        while((c = fgetc(ppmFilePtr)) != '\n') {}
     } else {
         ungetc(c, ppmFilePtr);
     }
        
 }
 
+// Skips the whitespaces 
+void skipWhitespaces(FILE* ppmFilePtr) {
+    char c;
+    while (isspace(c = fgetc(ppmFilePtr))) {} 
+    ungetc(c, ppmFilePtr);
+}
