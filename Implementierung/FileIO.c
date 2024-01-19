@@ -42,7 +42,7 @@ struct PPMFile readPPMFile(const char* filepath) {
     skipComments(ppmFilePtr);
 
     // Read the width
-    if(fscanf(ppmFilePtr, "%d", &ppmFile.width) != 1) {
+    if(fscanf(ppmFilePtr, "%zu", &ppmFile.width) != 1) {
         printf("Error: Could not read the header successfully.");
         exit(1);
     }
@@ -54,7 +54,7 @@ struct PPMFile readPPMFile(const char* filepath) {
     skipComments(ppmFilePtr);
 
     // Read the height
-    if(fscanf(ppmFilePtr, "%d", &ppmFile.height) != 1) {
+    if(fscanf(ppmFilePtr, "%zu", &ppmFile.height) != 1) {
         printf("Error: Could not read the header successfully.");
         exit(1);
     }
@@ -75,6 +75,7 @@ struct PPMFile readPPMFile(const char* filepath) {
     fgetc(ppmFilePtr);
 
     // We calculate the number of pixels (width * height) then multiply it by 3 because each has 3 entries of the same value (R, B, G) (each 1 byte)
+    //rawDataSize could technically overflow as it stores the result of a multipication of 2 size_t values, but having an image of 16 exabytes is not realistic so I'll leave it like this.
     size_t rawDataSize = ppmFile.width * ppmFile.height * 3;
     ppmFile.data = (uint8_t*) malloc(rawDataSize);
     size_t sz = fread(ppmFile.data, 1, rawDataSize, ppmFilePtr);

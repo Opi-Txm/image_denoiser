@@ -10,8 +10,8 @@
 Struct PPMFile represents the PPM file, containing the information of the header and all of the pixels in data. 
 */
 struct PPMFile {
-    int width;
-    int height;
+    size_t width;
+    size_t height;
     int maxColorValue;
     uint8_t* data;
 };
