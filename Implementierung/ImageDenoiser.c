@@ -60,7 +60,7 @@ void laplaceFilter(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t
             }
             val -= 4* img_in[y*width + x];
 
-            img_out[y*width + x] = (uint8_t)abs(val);
+            img_out[y*width + x] = (uint8_t)abs(val / 4);
         }
     }
 }
@@ -84,7 +84,6 @@ void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, siz
             tmpTop = img_in[(y+1)*width];
         }
         img_out[y*width] = (uint8_t) abs(img_in[y*width + 1] + tmpTop - img_in[y*width]*4);
-
         
         size_t x;
         for (x = 1; x + 17 < width; x+=16) {
@@ -100,6 +99,9 @@ void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, siz
 
             //Calculate the difference of the sum of the neighbouring pixels and the middle pixel.
             sumHiLo = differenceHiLo(sumHiLo, midHiLo);
+
+            //Divide the values by 1020
+            sumHiLo = binaryShiftHiLos(sumHiLo, 2);
 
             //Convert the 16bit values to 8bit values and store them in img_out.
             result = _mm_packs_epi16(sumHiLo.hi, sumHiLo.lo);
@@ -227,7 +229,7 @@ void denoise(const uint8_t* img, size_t width, size_t height,float a, float b, f
     //combine img, tmp1 and tmp2 like in the last formula of GRA 2.1 Funktionsweise and store it in uint8_t* result  
 
     for (size_t i = 0; i < width * height; i++) {
-        result[i] = tmp1[i] / 1020 * img[i] + (1 - tmp1[i] / 1020) * tmp2[i];
+        result[i] = ceil(tmp1[i] / 255) * img[i] + (1 - tmp1[i] / 255) * tmp2[i];
     }
 }
 
@@ -236,7 +238,7 @@ void denoise_V1(const uint8_t* img, size_t width, size_t height,float a, float b
     laplaceFilter_V1(result, tmp1, width, height);
     blur_V1(result, tmp2, width, height);
     for (size_t i = 0; i < width * height; i++) {
-        result[i] = tmp1[i] / 1020 * img[i] + (1 - tmp1[i] / 1020) * tmp2[i];
+        result[i] = tmp1[i] / 255 * img[i] + (1 - tmp1[i] / 255) * tmp2[i];
     }
 }
 
@@ -339,7 +341,7 @@ uint8_t edgeLaplaceFilter(const uint8_t* img_in, size_t width, size_t height, si
             val += img_in[y*width + x + 1];
         }
         val -= 4* img_in[y*width + x];
-        return (uint8_t)abs(val);
+        return (uint8_t)abs(val / 4);
 }
 
 struct HiLo* loadHiLoLaplace(const uint8_t* img_in, size_t width, size_t height, size_t x, size_t y, struct HiLo* hilos) {
