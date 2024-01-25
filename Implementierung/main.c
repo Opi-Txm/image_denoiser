@@ -149,18 +149,18 @@ int main(int argc, char *argv[]) {
     uint8_t* tempVar2;
     tempVar1 = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
     if (tempVar1 == NULL) {
-        printf("Error: No memory could be allocated for \"tempVar1\" in main.");
+        fprintf(stderr, "Error: No memory could be allocated for \"tempVar1\" in main.");
         exit(1);
     }
     tempVar2 = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
     if (tempVar2 == NULL) {
-        printf("Error: No memory could be allocated for \"tempVar2\" in main.");
+        fprintf(stderr, "Error: No memory could be allocated for \"tempVar2\" in main.");
         exit(1);
     }
     // The final output raw data 
     uint8_t* denoisedRawData = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
     if (denoisedRawData == NULL) {
-        printf("Error: No memory could be allocated for \"denoisedRawData\" in main.");
+        fprintf(stderr, "Error: No memory could be allocated for \"denoisedRawData\" in main.");
         exit(1);
     }
 
@@ -231,14 +231,14 @@ int main(int argc, char *argv[]) {
     if (correctness) {
         uint8_t* a = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
         if (a == NULL) {
-            printf("Error: No memory could be allocated for \"a\" in main/correctness.");
+            fprintf(stderr, "Error: No memory could be allocated for \"a\" in main/correctness.");
             exit(1);
         }
         denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, a);
 
         uint8_t* b = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
         if (b == NULL) {
-            printf("Error: No memory could be allocated for \"b\" in main/correctness.");
+            fprintf(stderr, "Error: No memory could be allocated for \"b\" in main/correctness.");
             exit(1);
         }
         denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
