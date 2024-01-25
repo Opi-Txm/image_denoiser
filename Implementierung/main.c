@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
     int opt;
     struct option long_options[] = {{"version",     optional_argument, NULL, 'V'},
                                     {"benchmark",   optional_argument, NULL, 'B'},
-                                    {"input",     required_argument, NULL, 'i'},
                                     {"output",      required_argument, NULL, 'o'},
                                     {"coeffs", required_argument, NULL, 'c'},
                                     {"help",        no_argument,       NULL, 'h'},
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
 
     // Loop for processing the command line input
     while (optind < argc) {
-        if((opt = getopt_long(argc, argv, "V:B::i:o:c:::hk", long_options, NULL)) != -1) {
+        if((opt = getopt_long(argc, argv, "V:B::o:c:::hk", long_options, NULL)) != -1) {
             switch (opt) {
                 case 'V':
                     if (strcmp(optarg, "0") != 0 || strcmp(optarg, "1") != 0) {
