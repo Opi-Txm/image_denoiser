@@ -27,7 +27,7 @@ des Computers etabliert und verbessert. Themen wie Bildentrauschung, Segmentieru
 wie der Nanotechnologie, der Sensorik und der medizinischen Bildgebung nicht mehr wegzudenken. Die Fernerkundung der Erde 
 und des Universums, die aus militärischen Gründen motiviert wurde und ihre Bilder und Erkenntnisse in der Meteorologie, 
 der Ozeanographie und der Astronomie anwendet, ist ein weiterer wichtiger Einsatzbereich.
-Es ist möglich, die Informationen der Bilder aus diesen verschiedenen Aufnahmequellen zu bearbeiten und zu ändern.++ 
+Die digitale Bildverarbeitung ermöglicht die Informationen der Bilder aus diesen verschiedenen Aufnahmequellen zu bearbeiten und zu ändern.
 
 \subsection{Bildentrauschung}
 \paragraph{}
@@ -46,7 +46,7 @@ sind, erklärt die Bedeutung dieser eng miteinander verbundenen Aufgaben bei der
     \begin{center}
       \centering
       \includegraphics[scale=1.2]{images/ROF_Denoising_Example.png}
-      \caption{ Ergebnis eines Bildes nach der Weichzeichnung und Entrauschung) \cite{Beispiel}}
+      \caption{ Ergebnis eines Bildes nach der Entrauschung \cite{Beispiel}}
     \end{center}
 \end{figure}
 
@@ -55,24 +55,28 @@ sind, erklärt die Bedeutung dieser eng miteinander verbundenen Aufgaben bei der
 Unsere Praktikumsaufgabe besteht darin eine effiziente Bearbeitungsweise zu finden, um ein farbiges Bild in Graustufen zu konvertieren 
 und schließlich, mit Hilfe von dem Laplace-Filter und einer Weichbildung, das Bild zu entrauschen. Als Eingabe wird eine PPM Datei erwartet,
 die dem Algorithmus übergeben wird. Nach dem Ausführen des Algorithmus wird das entrauschte Bild im PGM Format in einer separaten 
-Ausgabedatei gespeichert. Unsere Lösung wird durch zwei verschiedene Implementierungen dargestellt. Die erste Implementierung ist 
-die \verb|denoise| Funktion, welche die Bildentrauschung Schritt für Schritt für jeden Pixel ausführt.++ 
-Unsere zweite Implementierung \verb|denoise_V1| stellt eine effiziente Methode dar, den Algorithmus durchzuführen, indem SIMD-Befehle 
-benutzt werden. Zu diesem Zweck wird die Vorgehensweise des Algorithmus im theoretischen Teil analysiert und die Optimierung des 
+Ausgabedatei gespeichert.
+
+Unsere Lösung wird durch zwei verschiedene Implementierungen dargestellt. Die erste Implementierung ist 
+die \verb|denoise| Funktion, welche die Bildentrauschung Schritt für Schritt für jeden Pixel ausführt. 
+Unsere zweite Implementierung \verb|denoise_V1| stellt eine effizientere Methode dar, den Algorithmus durchzuführen, indem SIMD-Befehle 
+benutzt werden. 
+
+Zu diesem Zweck wird die Vorgehensweise des Algorithmus im theoretischen Teil analysiert und die Optimierung des 
 Algorithmus im praktischen Teil beschrieben.
 
 
 \section{Lösungsansatz}
-++
-\subsection{Theoretischer Teil}
 \paragraph{}
 Der folgende Abschnitt beschreibt den Ansatz unseres Programms, das eine PPM Datei erwartet und nach einer Sequenz von Verarbeitungen
- eine PGM Datei ausgibt.
+eine PGM Datei ausgibt.
+\subsection{Theoretischer Teil}
+\paragraph{}
 Das PPM Bildformat (.ppm), das wir in diesem Projekt explizit als Eingabe behandeln werden, steht für \enquote{Portable Pixel Map} 
-und ist ein Teil der Netpbm, ein Bildformat das in 1988  veröffentlicht wurde.++ Die Datei wird binär dargestellt und wird mit einem Header, 
+und ist ein Teil der Netpbm, ein Bildformat das in 1988  veröffentlicht wurde \cite{NetpbmHistory}. Die Datei wird binär dargestellt und wird mit einem Header, 
 das den Dateityp, die Breite, Höhe und die maximale Farbgröße des Bildes enthält, gefolgt von den Pixeln des Bildes, wo jede 3 Bytes einem 
 Pixelwert entspricht. Das Format kann auf Grund ihrer Einfachheit innerhalb einer E-Mail Nachricht ohne besondere Kapselung übertragen werden,
-sodass es möglichen Übersetzungen und Umkodierungen überleben kann und auf der anderen Seite leicht extrahierbar sein kann. cite 
+sodass es möglichen Übersetzungen und Umkodierungen überleben kann und auf der anderen Seite auch leicht extrahierbar sein kann \cite{netpbmFormatSpecification}. 
 Da dieses Format die Bilddatei Pixel für Pixel speichert und Gruppen von Pixeln derselben Farben nicht zusammenfasst, kann dies, 
 im Vergleich zu modernen Formaten wie JPEG oder PNG, eine relative große Datei sein. 
 
@@ -80,16 +84,16 @@ Ein einfaches Beispiel des PPM Formats sieht wie folgt aus: \newline
 
 \begin{center}
     \begin{verbatim}
-    P6  
-    # example from the man page
-    4 4
-    255
-    0  0  0    0  0  0    0  0  0   15  0 15
-    0  0  0    0 15  7    0  0  0    0  0  0
-    0  0  0    0  0  0    0 15  7    0  0  0
-    15 0 15    0  0  0    0  0  0    0  0  0
+        P6  
+        # example from the man page
+        4 4
+        255
+        0   1  0    2  0  0    1  0  6   15  0 15
+       123  0  4    0 255 7    0  0  0    0  5  0
+        0   2  0    3  0  0    0  15 7    0  7  8
+       115  3  15   0  0  0    9  0  0    0  2  0
     \end{verbatim}
-\end{center} cite
+\end{center} 
 
 \begin{itemize}
     \item P6: Eine \enquote{magische Zahl} zur Identifizierung des Dateityps. Die magische Zahl eines PPM-Bildes sind die beiden 
@@ -105,16 +109,12 @@ Eine 24bpp PPM Datei kann $2^{24} = 16777216$ Farben in RGB darstellen und jede 
 \begin{center}
     \( p(x, y) = \begin{bmatrix} R \\ G \\ B \end{bmatrix} \)
 \end{center}
-
-++ Intro smoother
-Das PGM Bildformat (.pgm) steht für \enquote{Portable GrayMap} und ist auch ein Teil der Netpbm. Dieses Format wird ebenfalls binär 
-dargestellt und behandelt die Schwarz-Weiße Version der obengenannten PPM. Das Format  nutzt für ein Pixelwert nur 1 Byte. 
-EXplain 
-Da die Ausgabe unseres Programms in Graustufen erfolgt, haben wir uns entschieden, das PGM-Format als Ausgabe zu verwenden. 
-(explain file smaller)
-Das PGM Format ist ähnlich aufgebaut wie das PPM Format. Der Unterschied liegt an der Repräsentierung der Pixeln, 
-die jetzt pro Pixel durch ein Byte dargestellt wird, statt 3 Bytes wie in einer PPM Datei. und die magische Zahl (explain better). 
-Die Zeichen \enquote{P5} entsprechen dem PGM Format.
+ 
+Das PGM Bildformat (.pgm), das wir in diesem Projekt als Ausgabe verwenden, steht für \enquote{Portable GrayMap} und ist auch ein Teil der Netpbm. Dieses Format wird ebenfalls binär 
+dargestellt und behandelt die Schwarz-Weiße Version der obengenannten PPM. Das Format  nutzt für ein Pixelwert nur 1 Byte.  
+Da die Ausgabe unseres Programms in Graustufen erfolgt, und die Graustufendateien für jedes Pixel die gleichen RGB-Koeffizienten haben, ist es ineffizient, den gleichen Wert dreimal zu speichern, daher speichern wir nur einen davon. 
+Dadurch wird auch die PGM-Ausgabedatei dreimal kleiner als die PPM. Deswegen haben wir uns entschieden, das PGM-Format als Ausgabe zu verwenden.  
+Anstelle von \enquote{P6}, das eine PPM-Datei kennzeichnet, entsprechen die Buchstaben \enquote{P5} der magischen Nummer einer PGM-Datei.
 
 \subsubsection*{Graustufenkonvertierung}
 
@@ -125,22 +125,23 @@ Um die Graustufenkonvertierung durchzuführen wenden wir die folgende Formel fü
     \( D = \frac{a \cdot R + b \cdot G + c \cdot B}{a + b + c} \)
 \end{center}
 
-wobei a, b und c Konstanten sind mit Werte:
+wobei die Konstanten a, b und c die folgenden Standardwerten haben:
 
 \begin{center}
     \(a = 2.99, b = 5.87, c = 1.14\)
 \end{center}
 
-In dieser Formel wird die Gewichtung der rot, grün und blau Werte nach dem ITU-R BT.601 Standard Construction of Luminance eingestellt. 
+In dieser Formel wird die Gewichtung der rot, grün und blau Werte nach dem ITU-R BT.601 Standard Construction of Luminance \cite{ITU-R_BT.601-7} eingestellt. 
 Dieser Standard wurde von der International Telecommunication Union für die digitale Videocodierung definiert und dient als eine effiziente 
 Gewichtung für die Graustufenfilterung. Der berechnete Durchschnitt wird dann Pixel für Pixel in die neue PGM Datei eingefügt.
 
 \subsubsection*{Laplace Filter}
 
 \paragraph{}
-Das Graustufenbild wird dann einer Rauschreduzierung unterzogen, wofür wir zunächst den Laplace-Filter auf das Graustufenbild Q anwenden, 
-der zur Kantendetektion verwendet wird. Wir definieren Kanten als eine große Farbänderung zwischen benachbarten Pixeln. 
-Er operiert durch Anwendung einer bestimmten Faltungsmatrix mit der Dimension 3 auf jedem Pixel des Bildes und rechnet sich wie folgt:
+Das Graustufenbild wird dann einer Rauschreduzierung unterzogen, wofür wir zunächst den Laplace-Filter \(M^L\) auf 
+das Graustufenbild \(Q\) anwenden, der zur Kantendetektion verwendet wird. Wir definieren Kanten als eine große 
+Farbänderung zwischen benachbarten Pixeln. Er operiert durch Anwendung einer bestimmten Faltungsmatrix mit der
+ Dimension 3 auf jedem Pixel des Bildes und rechnet sich wie folgt:
 
 \begin{center}
     \(Q^L \approx M^L * Q\)
@@ -153,16 +154,17 @@ Er operiert durch Anwendung einer bestimmten Faltungsmatrix mit der Dimension 3 
 \end{center}
 
 \paragraph{}
-Diese Faltungsmatrix hat eine hohe, negative zentrale Pixelgewichtung und kleinere Gewichtungen für die umgebenden Pixel. 
-Dadurch werden Unterschiede in der Pixelintensität betont, was zur Verstärkung von Kanten führt. Wichtig zu beachten ist, 
-dass bei den Kanten des Bildes für Zugriff außerhalb des Definitionsbereichs der Funktion implizit den Wert 0 angenommen 
-wird und deswegen die Kanten nach der Anwendung des Filters dünkler werden.
+Diese Faltungsmatrix hat eine hohe, negative zentrale Pixelgewichtung und kleinere Gewichtungen für 
+die umgebenden Pixel. Dadurch werden Unterschiede in der Pixelintensität betont, was zur Verstärkung 
+von Kanten führt. Wichtig zu beachten ist, dass bei den Kanten des Bildes für Zugriff außerhalb des 
+Definitionsbereichs der Funktion implizit den Wert 0 angenommen wird und deswegen die Kanten nach
+ der Anwendung des Filters dunkler werden.
+
 
 \subsubsection*{Weichzeichnung}
 
 \paragraph{}
-Als nächsten Schritt berechnen wir mittels der folgenden Faltungsmatrix die Weichzeichnung des Bildes, in dem wir den 
-Weichzeichnungsfilter auf das Graufstufenbild anwenden:
+Als nächsten Schritt berechnen wir mittels der folgenden Faltungsmatrix \(M^W\) die Weichzeichnung des Bildes:
 
 \begin{center}
     \(Q^W = \frac{1}{16} \cdot M^W * Q\) 
@@ -175,23 +177,25 @@ Weichzeichnungsfilter auf das Graufstufenbild anwenden:
 \end{center}
 
 \paragraph{}
-Mit Ausnahme der Pixel an den Rändern oder Ecken des Bildes nimmt jedes Pixel das Produkt von den äußeren Pixelwerten 
-und 1 oder 2, je nachdem, wo das Pixel um das mittlere Pixel herum platziert wird. Dazu wird noch das Produkt von dem 
-mittleren Pixelwert und 4 addiert und zurückgegeben. Hier wird das mittlere Pixel von den umgebenden Pixeln beeinflusst, 
-wodurch das Pixel unscharf wird. Diese Methode wird auch an Kanten verwendet, mit der Ausnahme, dass Matrixmultiplikationen 
-für Pixel an Kanten nicht vergütet werden, da sie nicht vorhanden sind. Die Summe der an den Ecken werden durch 9, 
-an den Kanten durch 12 und alle anderen Pixeln durch 16 geteilt. Diese Zahlen ergeben sich aus der Differenz 
-von 16 und der Summe der Zahlen in der Matrix, die mit den fehlenden Positionen in der rechten Matrix multipliziert werden sollten.
+Die Weichzeichnung des Bildes wird durch Multiplikation des Wertes jedes Pixels und der umliegenden Pixeln mit den entsprechenden 
+Werten in der Faltungsmatrix\(M^W\) erreicht. Die multiplizierten Werten werden dann aufaddiert und anschließend durch 16 geteilt.
+Hier wird das mittlere Pixel von den umgebenden Pixeln beeinflusst, wodurch das Pixel unscharf wird. Diese Methode wird auch an 
+Kanten verwendet, mit der Annahme, dass Matrixmultiplikationen für Pixeln an Kanten und Seiten nicht vergütet werden, da sie nicht 
+vorhanden sind. Die Summe der Pixelwerten an den Kanten werden durch 9, an den Seiten durch 12 und alle anderen durch 16 geteilt. 
+Diese Zahlen ergeben sich aus der Differenz von 16 und der Summe der Zahlen, in der die entsprechenden Pixelwerte nicht vorhanden
+sind.
 
 \subsubsection*{Berechnung des entrauschten  Bildes}
 
 \paragraph{}
-Das entrauschte Bild ergibt sich dann indem man das originale und das weichgezeich-nete Bild basierend auf der Ausgabe des 
-Laplace-Filters wie folgt kombiniert:
+Das entrauschte Bild ergibt sich dann indem man das graugestufte Bild \(Q\), das weichgezeichnete Bild \(Q^W\) und das Bild nach der Anwendung des Laplace-Filters \(Q^L\) wie folgt kombiniert:
 
 \begin{center}
     \(Q'_{(x, y)} = \frac{|Q_{(x, y)}^L|}{1020} \cdot Q_{(x, y)} + (1 - \frac{|Q_{(x, y)}^L|}{1020}) \cdot Q_{(x, y)}^W\)
 \end{center}
+
+Um die Formel einfacher zu verstehen, teilen wir sie in zwei Teilen auf: 
+
 \begin{center}
     \(\frac{|Q_{(x, y)}^L|}{1020} \cdot Q_{(x, y)}\) (1)
 \end{center}
@@ -199,42 +203,47 @@ Laplace-Filters wie folgt kombiniert:
      \((1 - \frac{|Q_{(x, y)}^L|}{1020}) \cdot Q_{(x, y)}^W\) (2)
 \end{center}
 
-(1): Diese Division normalisiert das Ergebnis des Laplace-Filters. Der Filter erzeugt Werte, die die Intensität der Kanten 
-im Bild repräsentieren. Durch die Division wird dieser Wert in einen Faktor zwischen 0 und 1 umgewandelt und mit dem Graugestuften 
-Bild multipliziert, was an Stellen, an denen das Laplace-gefilterte Bild hohe Werte hat,  die ursprünglichen Werte des Bildes behält, 
-was auf scharfe Kanten hindeutet.
+(1): Dieser Teil besteht aus das Produkt von der absoluten Wert des \(Q^L\) und \(Q^W\), dividiert mit 1020. 
+Die Division durch 1020 normalisiert das Ergebnis des Laplace-Filters. Der Filter erzeugt Werte, die die Intensität 
+der Kanten im Bild repräsentieren. Durch die Division wird dieser Wert in einen Faktor zwischen 0 und 1 umgewandelt 
+und mit dem graugestuften Bild multipliziert, was an Stellen, an denen \(Q^L\) hohe Werte hat, die ursprünglichen
+Werte des Bildes behält, was auf scharfe Kanten hindeutet.
 
-(2): Diese Operation bestimmt, wie viel vom weichgezeichneten Bild genutzt wird. An Stellen mit weniger Details oder Kanten wird 
-mehr vom weichgezeichneten Bild genommen, was hilft, das Rauschen zu reduzieren.
-Durch die Addition der beiden Seiten wird ein Bild ausgegeben, das bei den Kanten eines Bildes die Pixelwerte des originalen 
-Bildes nimmt und sonst die weichgezeichneten Werten. Dies führt zu einem entrauschten Bild, bei dem die scharfen Kanten erhalten bleiben.
+(2): Diese Operation bestimmt, wie viel vom weichgezeichneten Bild genutzt wird. An Stellen mit weniger Details oder
+Kanten wird mehr vom weichgezeichneten Bild genommen, was hilft, das Rauschen zu reduzieren.
+
+Durch die Addition der beiden Seiten wird ein Bild ausgegeben, das bei den Kanten der Farben eines Bildes die Pixelwerte des originalen Bildes und sonst die weichgezeichneten Werten nimmt. Dies führt zu einem entrauschten Bild, bei dem die scharfen Kanten erhalten bleiben.
 
 \subsection{Praktischer Teil}
 \paragraph{}
-In diesem Teil wird die Vorgehensweise der Implementierung einer Bildentrauschung beschrieben. Dafür werden zwei verschieden implementierte 
-Funktionen verwendet. Die Hauptimplementierung beschreibt einen effizienten Algorithmus für die Bildentrauschung, während die 
-Referenzimplementierung die normale Durchführung des Algorithmus darstellt. Dabei wird auch das Rahmenprogramm beschrieben, 
+In diesem Teil wird die Vorgehensweise der Implementierung einer Bildentrauschung beschrieben. Dafür werden zwei verschiedene 
+implementierte Funktionen verwendet. Die Referenzimplementierung beschreibt einen effizienten Algorithmus für die Bildentrauschung, 
+während die Hauptimplementierung die normale Durchführung des Algorithmus darstellt. Dabei wird auch das Rahmenprogramm beschrieben, 
 durch welches der Nutzer das Programm mit verschiedenen Optionen starten kann.
 
 \subsubsection*{Rahmenprogramm}
 \paragraph{}
-Die Codebase besteht aus drei Quelldateien (\verb|.c|) und zwei  Headerdatei (\verb|.h|). Im Header (\verb|FileIO.h|) wird die Datenstruktur 
-definiert, in welcher die Eingabedateien gespeichert werden. Die Eingabedatei ist durch ein struct representiert, welcher die Dimensionen 
-des Bilds, wie auch den maximalen Farbwert, gefolgt von einem Pointer, der auf die Werte jedes Pixels zeigt, speichert. Die Definition der
-Funktionen, die für die eigentliche Bildrauschung benutzt werden, kann man in der \textit{ImageDenoiser.h} Datei finden, während die einzelnen
-Implementierungen in der \textit{ImageDenoiser.c} Datei gefunden werden können. In der \verb|main.c| Datei ist die Main-Methode vorhanden,
-die das eigentliche Programm ausführt.
-Die Command Line ermöglicht es dem Nutzer das Programm mit mehreren Parametern auszuführen. Dabei sind die Ein-/Ausgabe Parameter
-(\verb|-i|, \verb|-o|), gefolgt von den entsprechenden Dateien immer anzugeben. Als Alternative kann sich der Nutzer mit dem Kommando 
-\enquote{-h} oder \enquote{--help} auch eine Anweisung zur Nutzung der Parameter in der Konsole anzeigen lassen. Um die ausgeführte 
-Version der Implementierung auszuwählen, muss der Parameter \verb|-V| gefolgt von einer 0 (\textit{Hauptimplementierung}) oder 1 
-(\textit{Referenzimplementierung}) angegeben werden. Falls dieser Parameter nicht angegeben wird, wird per default die Hauptimplementierung
-ausgeführt. Die Koeffizienten für die Graustufenkonvertierung können durch den \verb|--coeffs| Parameter angegeben werden. Falls dieser
-Parameter nicht vom Nutzer angegeben wird, werden die default Werte a = 2.99, b = 5.87 und c = 1.14 verwendet. Um die Performanz der
-Methode zu testen, muss zusätzlich der \verb|-B| Parameter angegeben werden. Nach dem Ausführen des Programms wird in diesem Fall die 
-Laufzeit der Funktion in Sekunden in der Konsole angezeigt werden. Falls man die gesamte Laufzeit für mehrere Iterationen berechnen möchte,
-muss man dem \verb|-B| Parameter zusätzlich noch eine positive Zahl, grösser als 0, hinzufügen. Diese Zahl gibt die Anzahl der durchzuführenden
-Iterationen an. Zusätzlich wurde der Parameter \verb|-k| implementiert, der die Ausgabedateien beider Methoden vergleicht, um die Korrektheit
+Die Codebase besteht aus drei Quelldateien (\verb|.c|) und zwei  Headerdatei (\verb|.h|). Im Header (\verb|FileIO.h|) 
+wird die Datenstruktur definiert, in welcher die Eingabedateien gespeichert werden. Die Eingabedatei ist durch ein struct 
+representiert, welcher die Dimensionen des Bilds, wie auch den maximalen Farbwert, gefolgt von einem Pointer, der auf die 
+Werte des Pixels zeigt, speichert. Die Definition der Funktionen, die für die eigentliche Bildentrauschung benutzt werden,
+kann man in der \textit{ImageDenoiser.h} Datei finden, während die einzelnen Implementierungen in der \textit{ImageDenoiser.c}
+Datei gefunden werden können. In der \verb|main.c| Datei ist die Main-Methode vorhanden, die das eigentliche Programm ausführt.
+
+Die Command Line ermöglicht es dem Nutzer das Programm mit mehreren Parametern auszuführen. 
+Dabei sind der Ausgabe Parameter (\verb|-o|), gefolgt von dem entsprechenden Dateiname, und die Eingabe Datei, 
+als Positional Argument, immer anzugeben. 
+Als Alternative kann sich der Nutzer mit dem Kommando \enquote{-h} oder \enquote{--help} auch eine Anweisung zur 
+Nutzung der Parameter in der Konsole anzeigen lassen. Um die ausgeführte Version der Implementierung auszuwählen, 
+muss der Parameter \verb|-V| gefolgt von einer 0 (\textit{Hauptimplementierung}) oder 1 (\textit{Referenzimplementierung})
+angegeben werden. Falls dieser Parameter nicht angegeben wird, wird per default die Hauptimplementierung ausgeführt. 
+Die Koeffizienten für die Graustufenkonvertierung können durch \verb|--coeffs| Parameter angegeben werden. Falls dieser
+Parameter nicht vom Nutzer angegeben wird, werden die default Werte a = 2.99, b = 5.87 und c = 1.14 verwendet. Um die
+Performanz der Methode zu testen, muss zusätzlich der \verb|-B| Parameter angegeben werden. Nach dem Ausführen des 
+Programms wird in diesem Fall die Laufzeit der Funktion in Sekunden in der Konsole angezeigt werden. Falls man die
+gesamte Laufzeit für mehrere Iterationen berechnen möchte, muss man dem \verb|-B| Parameter zusätzlich noch eine 
+positive Zahl, grösser als 0, hinzufügen. Diese Zahl gibt die Anzahl der durchzuführenden Iterationen an. Zusätzlich 
+wurde der Parameter \verb|-k| implementiert, der die Ausgabedateien beider Methoden vergleicht, um die Korrektheit 
 der Methoden zu testen.
 
 \subsubsection*{Implementierung}
@@ -244,6 +253,7 @@ Insbesondere nutzen wir für unser Bildenträuschungsprogramm Single Instruction
 gleichzeitig zu verarbeiten. Diese Methode ist besonders vorteilhaft für Matrixoperationen, die einen Großteil unserer 
 Entrauschungslogik ausmachen. Da für jede Matrixmultiplikation das Ergebnis der Berechnungen der Pixeln unabhängig voneinander sind, 
 kann dies effektiv parallelisiert werden.
+
 Unser Programm beinhaltet zwei Versionen: \verb|denoise()| und \verb|denoise_V1()|. Während \verb|denoise()| eine sequenzielle 
 Bearbeitung der Pixel für alle Methoden durchführt, nutzt \verb|denoise_V1()| SIMD-Operationen für fast alle Schritte außer der
 letzten Berechnung. Die Graustufenkonvertierung in \verb|denoise_V1()| verarbeitet vier Pixel gleichzeitig, und die Matrixmultiplikationen 
@@ -253,59 +263,62 @@ den sogenannten Edge Cases, greift das Programm jedoch auf die Pixel-für-Pixel-
 
 
 % TODO: Je nach Aufgabenstellung einen der Begriffe wählen
-\section{Korrektheit/Genauigkeit}
-\paragraph{}
-Die Korrektheit unseres Programms wird durch eine Äquivalenzprüfung nachgewiesen. In unserem Programm wird dies durch zwei verschiedene 
-Ansätze für dasselbe Problem erreicht. Der erste Ansatz ist in der Methode \verb|denoise| enthalten, die aus dem Ausgangsbild ein Graubild
-berechnet, darauf einen Laplace-Filter anwendet, eine Unschärfe für das Graubild berechnet und dann alle drei Ergebnisse kombiniert. 
-Dieser Ansatz folgt der mathematischen Lösung aus der Übung, die die Schritte wie zuvor beschrieben berechnet. Die andere Lösung ist
-ein völlig anderer Ansatz für dasselbe Problem. Anstatt eine einfache Berechnung zu verwenden, haben wir SIMD verwendet und eine
-weitere Methode namens \verb|denoise_V1| erstellt. Im Rahmenprogram gibt es eine Option -k, die der Benutzer verwenden kann. 
-Falls diese Option gesetyt ist, werden beide Methoden \verb|denoise| und \verb|denoise_V1| aufgerufen, die Ausgabewerte beider
-Methoden in verschiedenen Variablen a (für denoise) und b (für denoiseV1) gespeichert und die beiden Ausgabedateien Byte für 
-Byte vergliechen. Wir haben die Ergebnisse für eine Vielzahl von Testfällen getestet (siehe Abschnitt ...) und alle Tests waren positiv,
-was bedeutet, dass die Ergebnisse beider Implementierungen gleich waren. Wenn die Ausgabe von zwei verschiedenen Ansätzen für dasselbe
-Problem gleich ist, beweist das die Korrektheit beider Programme. 
+\section{Korrektheit}
+\paragraph{}Die Korrektheit unseres Programms wird durch eine Äquivalenzprüfung nachgewiesen. In unserem Programm wird dies durch zwei verschiedene Implementierungen für dasselbe Problem erreicht. 
 
+Der erste Ansatz ist in der Methode \verb|denoise| enthalten, die aus dem Ausgangsbild ein Graubild berechnet, darauf einen Laplace-Filter anwendet, eine Unschärfe für das Graubild berechnet und dann alle drei Ergebnisse kombiniert. Dieser Ansatz folgt der mathematischen Lösung aus der Problemdarstellung, die die Schritte, wie zuvor beschrieben, berechnet. 
+
+Die andere Lösung wird völlig anders implementiert. Anstatt eine einfache Berechnung zu verwenden, haben wir eine zweite Methode namens \verb|denoise_V1|, die SIMD verwendet, erstellt.  
+
+Im Rahmenprogram gibt es eine Option -k, die der Benutzer verwenden kann, um die Korrektheit beider Implementierungen zu überprüfen. Falls diese Option gesetzt ist, werden beide Methoden \verb|denoise| und \verb|denoise_V1| aufgerufen, die jeweiligen Ausgabewerte in verschiedenen Variablen a (für \verb|denoise|) und b (für \verb|denoise_V1|) gespeichert und letzendlich die beiden Ausgabedateien Byte für Byte vergliechen. Falls die beiden Ausgabedateien gleich sind, gibt unser Programm in der Konsole: \enquote{They are the same picture!} aus.
+
+Wir haben die Ergebnisse für eine Vielzahl von Testfällen, 
+die in der Datei Implementierung/Tests zu finden sind, getestet.
+Alle Tests waren erfolgreich, was bedeutet, dass beide Implementierungen die selbe Ergebnisse für jeden Test erzeugt haben. Wenn die Ausgabe zweier verschiedener Ansätze, die dieselbe Datei als Eingabe enthalten, gleich ist, beweist das die Korrektheit beider Implementierungen. 
 
 \section{Performanzanalyse}
-Für die Leistungsanalyse wurden die Tests auf einem Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz 1.99 GHz RAM: 16 GB System durchgeführt. 
-Die kleinste enthaltene Datei ist eine 64x64-Datei und die größte ist 8192x8129. Die Zwischendateien ergeben sich aus der Multiplikation
-der Größe der vorherigen Datei mit 2. Sie werden im Verzeichnis Implementierung/Tests gespeichert. Die Leistung jeder Version 
-(denoise und denoiseV1) wird mit dem Flag -O0 und auch mit dem Flag -O2 gemessen. 
-In Abbildung drei haben wir die Funktionen denoise und denoiseV1 mit der Compileroption -O0 getestet. Wenn die kleinste Datei 
-auf ihre Leistung getestet wird, ist die SIMD-Version 1,4 Mal schneller als die Basisversion. Bei der größten Datei ist die Berechnung 
-it der SIMD-Version 1,6-mal schneller als mit der Standardversion. Dies liegt daran, dass SIMD bei der Verarbeitung größerer Dateien 
-mehrere Komponenten parallel verarbeitet, was insgesamt zu einer schnelleren Verarbeitung führt als die Verarbeitung einzelner Elemente.
-In Abbildung 4 haben wir die gleichen Dateien getestet, aber dieses Mal mit dem eingeschalteten Optimierungsflag -O2. Anhand des
-Ergebnisses sehen wir, dass die kleinste Datei mit SIMD ~2 mal schneller berechnet wird als mit der normalen Version und die größte
-Datei ~3,2 mal schneller als die normale Version. Der Grund dafür, dass die größeren Dateien mit SIMD schneller berechnet werden
-als mit der normalen Version, ist derselbe wie oben erwähnt. Wir können auch feststellen, dass die SIMD-Version mit dem -O2-Flag 
-chneller ist als mit dem -O0-Flag. Das liegt daran, dass das -O2-Flag zusätzliche Optimierungen wie Schleifenausrollung und 
-Vektorisierung bietet, die der SIMD-Version zugute kommen. Es ist erwähnenswert, dass unser SIMD-Programm ~3,5 Mal schneller 
-ist als das normale Programm, wenn es in einer 1024x1024-Datei getestet wird. Und im Falle der 2048x2048-Datei ist es ~4,2 mal schneller, was die Effizienz unserer SIMD-Version beweist. 
+\paragraph{}
+Für die Leistungsanalyse wurden die Tests auf einem Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz 1.99 GHz RAM: 16 GB System durchgeführt. Die kleinste getestete Datei ist eine 64x64-Datei und die größte Datei ist 8192x8192 Pixel groß. Die Zwischendateien ergeben sich aus der Multiplikation der Größe der vorherigen Datei, mit 2. Die Dateien, die wir für die Durchführung der Tests verwendet haben, können in dem Implementierung/Tests Verzeichnis gefunden werden. Die Leistung jeder Version (\verb|denoise| und \verb|denoise_V1|) wurde sowohl mit dem Flag -O0, als auch mit dem Flag -O2 gemessen. 
+
+In Abbildung 2 kann man die Laufzeit der Tests, mit der Compileroption -O0, für beide Implementierungen, sehen. Für die kleinste getestete Datei ist die Leistung der SIMD-Version 1,4 Mal schneller als für die Basisversion. Bei der größten getesteten Datei ist die Berechnung mit der SIMD-Version 1,6 Mal schneller als mit der Standardversion. Dies liegt daran, dass SIMD bei der Verarbeitung größerer Dateien mehrere Komponenten parallel verarbeitet, was insgesamt zu einer schnelleren Verarbeitung führt als die Verarbeitung einzelner Elemente. 
 
 \begin{figure}[!h]
     \begin{center}
       \centering
-      \includegraphics[scale=0.56]{images/PerformanceO0.png}
-      \caption{ Performanz mit O0) \cite{Beispiel}}
+      \includegraphics[scale=0.6]{images/PerformanceO0.png}
+      \caption{ Performanz mit O0 \cite{Beispiel}}
     \end{center}
 \end{figure}
 
-\clearpage
+In Abbildung 3 haben wir für die Laufzeitanalyse die gleichen Testdateien, aber dieses Mal mit dem eingeschalteten Optimierungsflag -O2, verwendet. Anhand des Ergebnisses können wir bemerken, dass für die kleinste getestete Datei, die SIMD-Version ~2 mal schneller berechnet wird als die normale Basisversion. Für die größte Datei ist die SIMD-Version ~3,2  mal schneller. Der Grund dafür, dass die größeren Dateien mit SIMD schneller berechnet werden als mit der normalen Version, ist derselbe wie oben erwähnt. Wir können auch feststellen, dass die SIMD-Version mit dem -O2-Flag schneller als mit dem -O0-Flag ist. Das liegt daran, dass das -O2-Flag zusätzliche Optimierungen, wie Schleifenausrollung und Vektorisierung bietet, die der SIMD-Version zugute kommen. Es ist erwähnenswert, dass unsere SIMD-Version ~3,5 Mal schneller als die Basisversion, für eine 1024x1024 große Datei, ist. Im Falle der 2048x2048-Datei ist sie dann ~4,2 mal schneller. Die Analyse der Laufzeit beider Implementierungen beweist somit die Effizienz unser SIMD-Version. 
 
 \begin{figure}[!h]
     \begin{center}
       \centering
-      \includegraphics[scale=0.56]{images/PerformanceO1.png}
-      \caption{ Performanz mit O2) \cite{Beispiel}}
+      \includegraphics[scale=0.6]{images/PerformanceO1.png}
+      \caption{ Performanz mit O2 \cite{Beispiel}}
     \end{center}
 \end{figure}
-
-
 
 \section{Zusammenfassung und Ausblick}
+\paragraph{}
+Zusammenfassend lässt sich sagen, dass das Ziel dieses Projekts darin besteht, eine Entrauschungsfunktion für die Entrauschung
+von Bildern bereitzustellen. Wir haben zunächst einen einfachen Algorithmus entwickelt, der auf die mathematischen Formeln der 
+Übung basiert und jedes Bild Pixel für Pixel bearbeitet. Nach der Basisversion, die wir zur Verfügung gestellt haben, dachten 
+wir aufgrund der Tatsache, dass die Daten aus einer PPM-Datei aufeinanderfolgend sind, dass die beste Optimierungslösung,
+die Nutzung von SIMD Instruktionen sein würde. Nach diesem Erkenntnis haben wir auch eine zweite Version des Entrauschungsalgorithmus 
+auf der Grundlage von SIMD-Anweisungen entwickelt, die effizienter als die erste ist. Nach der Durchführung von Laufzeitanalysen,
+für jede implementierte Version, kommen wir zu der Schlussfolgerung, dass unsere SIMD-Version in der Tat etwa drei Mal schneller
+ist als die Basisversion. Diese Ergebnisse tragen dazu bei, dass unsere Entscheidung, SIMD Instruktionen anzuwenden, 
+eine richtige Entscheidung war.
+
+Es ist aber noch zu erwähnen, dass unser Programm noch potenziell optimiert werden kann. 
+Die Graustufenkonvertierung unseres Entrauschungsprogramms nimmt die RGB Werte eines Pixels 
+und speichert sie in einem 128 bit Wert, wobei noch ein Padding Wert hinzugefügt wird. Diese 
+Verschwendung kann durch das Einrücken des Rot-Wertes des nächsten Pixels und analog für die 
+darauf folgenden Pixeln beseitigt werden, was wir aber auf Grund der Übersichtlichkeit des
+Programms nicht übernommen haben. Außerdem ist noch die Verwendung von Threads in den 3 
+Teilen der Entrauschungsfunktion für die Optimierung möglich.
 
 % TODO: Fuegen Sie Ihre Quellen der Datei Ausarbeitung.bib hinzu
 % Referenzieren Sie diese dann mit \cite{}.
