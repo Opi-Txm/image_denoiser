@@ -223,28 +223,23 @@ durch welches der Nutzer das Programm mit verschiedenen Optionen starten kann.
 
 \subsubsection*{Rahmenprogramm}
 \paragraph{}
-Die Codebase besteht aus drei Quelldateien (\verb|.c|) und zwei  Headerdatei (\verb|.h|). Im Header (\verb|FileIO.h|) 
-wird die Datenstruktur definiert, in welcher die Eingabedateien gespeichert werden. Die Eingabedatei ist durch ein struct 
-representiert, welcher die Dimensionen des Bilds, wie auch den maximalen Farbwert, gefolgt von einem Pointer, der auf die 
-Werte des Pixels zeigt, speichert. Die Definition der Funktionen, die für die eigentliche Bildentrauschung benutzt werden,
-kann man in der \textit{ImageDenoiser.h} Datei finden, während die einzelnen Implementierungen in der \textit{ImageDenoiser.c}
-Datei gefunden werden können. In der \verb|main.c| Datei ist die Main-Methode vorhanden, die das eigentliche Programm ausführt.
+Die Codebase besteht aus drei Quelldateien (\verb|.c|) und zwei  Headerdatei (\verb|.h|). Im Header (\verb|FileIO.h|) wird die Datenstruktur definiert, in welcher die Eingabedateien gespeichert werden. Die Eingabedatei ist durch ein struct representiert, welcher die Dimensionen des Bilds, wie auch den maximalen Farbwert, gefolgt von einem Pointer, der auf die Werte des Pixels zeigt, speichert. Die Definition der Funktionen, die für die eigentliche Bildentrauschung benutzt werden, kann man in der \textit{ImageDenoiser.h} Datei finden, während die einzelnen Implementierungen in der \textit{ImageDenoiser.c} Datei gefunden werden können. In der \verb|main.c| Datei ist die Main-Methode vorhanden, die das eigentliche Programm ausführt.
 
 Die Command Line ermöglicht es dem Nutzer das Programm mit mehreren Parametern auszuführen. 
-Dabei sind der Ausgabe Parameter (\verb|-o|), gefolgt von dem entsprechenden Dateiname, und die Eingabe Datei, 
-als Positional Argument, immer anzugeben. 
-Als Alternative kann sich der Nutzer mit dem Kommando \enquote{-h} oder \enquote{--help} auch eine Anweisung zur 
+Dabei sind der Ausgabe Parameter (\verb|-o|), gefolgt von dem entsprechenden Dateiname, und die Eingabe Datei, als Positional Argument, immer anzugeben. Die Eingabedatei sollte immer als letzter Parameter angegeben werden.
+Als Alternative kann sich der Nutzer mit dem Kommando \enquote{-h} oder \enquote{--help} auch eine Anweisung zur
 Nutzung der Parameter in der Konsole anzeigen lassen. Um die ausgeführte Version der Implementierung auszuwählen, 
-muss der Parameter \verb|-V| gefolgt von einer 0 (\textit{Hauptimplementierung}) oder 1 (\textit{Referenzimplementierung})
+muss der Parameter \verb|-V| gefolgt von einer 0 (\textit{Hauptimplementierung}) oder 1 (\textit{Referenzimplementierung}) 
 angegeben werden. Falls dieser Parameter nicht angegeben wird, wird per default die Hauptimplementierung ausgeführt. 
-Die Koeffizienten für die Graustufenkonvertierung können durch \verb|--coeffs| Parameter angegeben werden. Falls dieser
-Parameter nicht vom Nutzer angegeben wird, werden die default Werte a = 2.99, b = 5.87 und c = 1.14 verwendet. Um die
+Die Koeffizienten für die Graustufenkonvertierung können durch \verb|--coeffs| Parameter angegeben werden. Falls dieser 
+Parameter nicht vom Nutzer angegeben wird, werden die default Werte a = 2.99, b = 5.87 und c = 1.14 verwendet. Um die 
 Performanz der Methode zu testen, muss zusätzlich der \verb|-B| Parameter angegeben werden. Nach dem Ausführen des 
-Programms wird in diesem Fall die Laufzeit der Funktion in Sekunden in der Konsole angezeigt werden. Falls man die
-gesamte Laufzeit für mehrere Iterationen berechnen möchte, muss man dem \verb|-B| Parameter zusätzlich noch eine 
+Programms wird in diesem Fall die Laufzeit der Funktion in Sekunden in der Konsole angezeigt werden. Falls man die 
+gesamte Laufzeit für mehrere Iterationen berechnen möchte, muss man dem \verb|-B| Parameter zusätzlich noch eine
 positive Zahl, grösser als 0, hinzufügen. Diese Zahl gibt die Anzahl der durchzuführenden Iterationen an. Zusätzlich 
 wurde der Parameter \verb|-k| implementiert, der die Ausgabedateien beider Methoden vergleicht, um die Korrektheit 
-der Methoden zu testen.
+der Methoden zu testen. Ein Beispiel für die Ausführung des Codes wäre: \verb|./denoise -V0 -B10 -o mandrill_out.pgm mandrill.ppm| 
+
 
 \subsubsection*{Implementierung}
 \paragraph{}
