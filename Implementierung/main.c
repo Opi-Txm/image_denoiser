@@ -183,8 +183,7 @@ int main(int argc, char *argv[]) {
                 struct timespec end;
                 clock_gettime(CLOCK_MONOTONIC, &end);
                 double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-                double average = time / iterations;
-                printf("Done after %f seconds on average (measured on %d iterations)\n", average, iterations);
+                printf("Done after %f seconds (measured on %d iterations)\n", time, iterations);
             }
         } else {
             denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
@@ -209,8 +208,7 @@ int main(int argc, char *argv[]) {
                 struct timespec end;
                 clock_gettime(CLOCK_MONOTONIC, &end);
                 double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-                double average = time / iterations;
-                printf("Done after %f seconds on average (measured on %d iterations)\n", average, iterations);
+                printf("Done after %f seconds (measured on %d iterations)\n", time, iterations);
             }
         } else {
             denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData);
