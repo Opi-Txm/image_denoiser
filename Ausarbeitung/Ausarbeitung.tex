@@ -23,11 +23,12 @@
 Die digitale Bildverarbeitung behandelt grundlegende Methoden zur Bearbeitung und Aufbereitung von Bildern. 
 Die Bildverarbeitungstechniken haben sich in den letzten zehn Jahren aufgrund zahlreicher Anwendungsbereiche, 
 des wissenschaftlichen Interesses an diesem noch relativ jungen Forschungsgebiet und der zunehmenden Leistungsstärke 
-des Computers etabliert und verbessert. Themen wie Bildentrauschung, Segmentierung und Bildrekonstruktion sind in Bereichen 
-wie der Nanotechnologie, der Sensorik und der medizinischen Bildgebung nicht mehr wegzudenken. Die Fernerkundung der Erde 
-und des Universums, die aus militärischen Gründen motiviert wurde und ihre Bilder und Erkenntnisse in der Meteorologie, 
-der Ozeanographie und der Astronomie anwendet, ist ein weiterer wichtiger Einsatzbereich.
-Die digitale Bildverarbeitung ermöglicht die Informationen der Bilder aus diesen verschiedenen Aufnahmequellen zu bearbeiten und zu ändern.
+des Computers stark etabliert und verbessert. Themen wie Bildentrauschung, Segmentierung und Bildrekonstruktion sind in Bereichen 
+wie der Nanotechnologie, der Sensorik und der medizinischen Bildgebung nicht mehr wegzudenken. Die Fernerkundung der Erde und 
+des Universums, die aus militärischen Gründen motiviert wurde und ihre Bilder und Erkenntnisse in der Meteorologie, 
+Ozeanographie und Astronomie anwendet, ist ein weiteres wichtiges Anwendungsgebiet dieser Technologien.
+Die digitale Bildverarbeitung ermöglicht es, die Informationen der Bilder aus diesen verschiedenen Aufnahmequellen zu bearbeiten und zu ändern.
+Sie ist daher ein wichtiger Bereich für weitere Forschung und Entwicklung.
 
 \subsection{Bildentrauschung}
 \paragraph{}
@@ -38,6 +39,7 @@ der Bildinformationen an den gestörten Stellen, indem die Informationen aus den
 Nicht nur die Rauschentfernung, sondern auch die Kantenerhaltung, Erkennung und Extraktion sind bei der Modellierung 
 eines effizienten Entrauschungsalgorithmus von entscheidender Bedeutung. Dass Bildkanten wichtige Informationsquellen 
 sind, erklärt die Bedeutung dieser eng miteinander verbundenen Aufgaben bei der Verzerrung des Bildes.
+In Abbildung 1 wird veranschaulicht, wie die Entrauschung eines Bildes funktioniert.
 
 \clearpage
 
@@ -59,7 +61,7 @@ Ausgabedatei gespeichert.
 
 Unsere Lösung wird durch zwei verschiedene Implementierungen dargestellt. Die erste Implementierung ist 
 die \verb|denoise| Funktion, welche die Bildentrauschung Schritt für Schritt für jeden Pixel ausführt. 
-Unsere zweite Implementierung \verb|denoise_V1| stellt eine effizientere Methode dar, den Algorithmus durchzuführen, indem SIMD-Befehle 
+Die zweite heißt \verb|denoise_V1| und stellt eine effizientere Methode dar, den Algorithmus durchzuführen, indem SIMD-Befehle 
 benutzt werden. 
 
 Zu diesem Zweck wird die Vorgehensweise des Algorithmus im theoretischen Teil analysiert und die Optimierung des 
@@ -102,7 +104,7 @@ Ein einfaches Beispiel des PPM Formats sieht wie folgt aus: \newline
     \item 4 4: Die Breite und Höhe des Bildes in ASCII-Dezimalzahl, getrennt von einem Leerzeichen.
     \item 255: Der maximale Farbwert, wiederum in ASCII-Dezimalzahl. Für das Projekt ist er auf 255 festgelegt.
     \item Die unteren Nummern sind ein Raster von Zeilen in der Reihenfolge von oben nach unten. Jede Zeile besteht aus \{Breite\} 
-    pixeln in der Reihenfolge von links nach rechts. Jedes Pixel ist ein Tripel von roten, grünen und blauen Mustern, in dieser Reihenfolge. Jedes Muster wird in reinem Binärformat durch 1 Byte dargestellt.
+    Pixeln in der Reihenfolge von links nach rechts. Jedes Pixel ist ein Tripel von roten, grünen und blauen Mustern, in dieser Reihenfolge. Jedes Muster wird in reinem Binärformat durch 1 Byte dargestellt.
 \end{itemize}
 
 Eine 24bpp PPM Datei kann $2^{24} = 16777216$ Farben in RGB darstellen und jede Pixel lässt sich wie folgt darstellen:
@@ -230,11 +232,11 @@ Dabei sind der Ausgabe Parameter (\verb|-o|), gefolgt von dem entsprechenden Dat
 Als Alternative kann sich der Nutzer mit dem Kommando \enquote{-h} oder \enquote{--help} auch eine Anweisung zur
 Nutzung der Parameter in der Konsole anzeigen lassen. Um die ausgeführte Version der Implementierung auszuwählen, 
 muss der Parameter \verb|-V| gefolgt von einer 0 (\textit{Hauptimplementierung}) oder 1 (\textit{Referenzimplementierung}) 
-angegeben werden. Falls dieser Parameter nicht angegeben wird, wird per default die Hauptimplementierung ausgeführt. 
+bestimmt werden. Falls dieser Parameter nicht angegeben wird, wird per default die Hauptimplementierung ausgeführt. 
 Die Koeffizienten für die Graustufenkonvertierung können durch \verb|--coeffs| Parameter angegeben werden. Falls dieser 
-Parameter nicht vom Nutzer angegeben wird, werden die default Werte a = 2.99, b = 5.87 und c = 1.14 verwendet. Um die 
-Performanz der Methode zu testen, muss zusätzlich der \verb|-B| Parameter angegeben werden. Nach dem Ausführen des 
-Programms wird in diesem Fall die Laufzeit der Funktion in Sekunden in der Konsole angezeigt werden. Falls man die 
+Parameter nicht vom Nutzer bestimmt sind, werden die default Werte a = 2.99, b = 5.87 und c = 1.14 verwendet. Um die 
+Performanz der Methode zu testen, muss zusätzlich der \verb|-B| Parameter gegeben werden. Nach dem Ausführen des 
+Programms wird in diesem Fall die Laufzeit der Funktion in Sekunden in der Konsole angezeigt. Falls man die 
 gesamte Laufzeit für mehrere Iterationen berechnen möchte, muss man dem \verb|-B| Parameter zusätzlich noch eine
 positive Zahl, grösser als 0, hinzufügen. Diese Zahl gibt die Anzahl der durchzuführenden Iterationen an. Zusätzlich 
 wurde der Parameter \verb|-k| implementiert, der die Ausgabedateien beider Methoden vergleicht, um die Korrektheit 
