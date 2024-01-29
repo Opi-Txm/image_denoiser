@@ -40,7 +40,7 @@ void grey_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t heigh
     }
 }
 
-void laplaceFilter(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height) {
+void laplaceFilter(const uint8_t* img_in, uint16_t* img_out, size_t width, size_t height) {
     int32_t val;
     for (size_t y = 0; y < height; y++) {
         for (size_t x = 0; x < width; x++) {
@@ -60,13 +60,14 @@ void laplaceFilter(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t
             }
             val -= 4* img_in[y*width + x];
 
-            img_out[y*width + x] = (uint8_t)abs(val / 4);
+            img_out[y*width + x] = (uint16_t)abs(val);
         }
     }
 }
 
-void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height) {
-    __m128i zero = _mm_setzero_si128(), mid, result;
+void laplaceFilter_V1(const uint8_t* img_in, uint16_t* img_out, size_t width, size_t height) {
+    __m128i zero = _mm_setzero_si128(), mid;
+    //__m128i result;
     struct HiLo sumHiLo;
     //gets space for 4 HiLo structs, top, bot, left and right pixel of it.
     //Indexes in order is: Top (0), Bot (1), Left (2), Right (3)
@@ -80,10 +81,13 @@ void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, siz
     for (size_t y = 0; y < height; y++) {
         //Edge case: first pixel
         uint8_t tmpTop = 0;
-        if (y + 1 < height) {
+        if (y+1 != height) {
             tmpTop = img_in[(y+1)*width];
         }
-        img_out[y*width] = (uint8_t) abs(img_in[y*width + 1] + tmpTop - img_in[y*width]*4);
+        if (y != 0) {
+            tmpTop += img_in[(y-1)*width];
+        }
+        img_out[y*width] = (uint16_t) abs(img_in[y*width + 1] + tmpTop - img_in[y*width]*4);
         
         size_t x;
         for (x = 1; x + 17 < width; x+=16) {
@@ -99,13 +103,11 @@ void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, siz
 
             //Calculate the difference of the sum of the neighbouring pixels and the middle pixel.
             sumHiLo = differenceHiLo(sumHiLo, midHiLo);
-
-            //Divide the values by 1020
-            sumHiLo = binaryShiftHiLos(sumHiLo, 2);
-
-            //Convert the 16bit values to 8bit values and store them in img_out.
-            result = _mm_packs_epi16(sumHiLo.hi, sumHiLo.lo);
-            _mm_storeu_si128((__m128i*)(img_out + y*width+x), result);
+            
+            //Store the values in img_out.
+            //result = _mm_packs_epi16(sumHiLo.hi, sumHiLo.lo);
+            _mm_storeu_si128((__m128i*)(img_out + y*width+x), sumHiLo.lo);
+            _mm_storeu_si128((__m128i*)(img_out + y*width+x+8), sumHiLo.hi);
         }
         //Edge case: Remaining pixels at the right less than 16 in total.
         for (; x < width; x++) {
@@ -217,29 +219,43 @@ void blur_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t heigh
 }
 
 void denoise(const uint8_t* img, size_t width, size_t height,float a, float b, float c, uint8_t* tmp1, uint8_t* tmp2, uint8_t* result) {
-    //make image grey: Q and store in uint8_t* img. img is PGM!
-    grey(img, result, width, height, a, b, c);
+    //new uint16_t* due to the following reasons:
+    //1. Result of the laplace filter has the max value of 1020 after making it abstract and does not fit in a uint8_t.
+    //2. Dividing the value by 4 beforehand and dividing the value later in the last formula by 255 would result in different values since the rest of division by 4 is cut out. And apparently you need full mathematical precision.
+    //3. Just passing a different uint8_t* for the laplace filter multiplication looks pretty complex on SIMD since you don't have a modulo function and just calculating everything with uint16_t is way easier. 
+    uint16_t* tmpLaplace = malloc(sizeof(uint16_t) * width * height);
+    
+    //make image grey: Q and store in uint8_t* tmp1. result is PGM!
+    grey(img, tmp1, width, height, a, b, c);
 
-    //apply laplace filter to grey image: Q^L and store in uint8_t* tmp1
-    laplaceFilter(result, tmp1, width, height);
+    //apply laplace filter to grey image: Q^L and store in uint16_t* tmpLaplace
+    laplaceFilter(tmp1, tmpLaplace, width, height);
 
     //apply blur: Q^W and store in uint8_t* tmp2
-    blur(result, tmp2, width, height);
+    blur(tmp1, tmp2, width, height);
     
     //combine img, tmp1 and tmp2 like in the last formula of GRA 2.1 Funktionsweise and store it in uint8_t* result  
-
+    float laplaceValue;
     for (size_t i = 0; i < width * height; i++) {
-        result[i] = ceil(tmp1[i] / 255) * img[i] + (1 - tmp1[i] / 255) * tmp2[i];
+        laplaceValue = (float)tmpLaplace[i] / 1020;
+        result[i] = (uint8_t) (laplaceValue * tmp1[i] + (1 - laplaceValue) * tmp2[i]);
     }
+    free(tmpLaplace);
 }
 
 void denoise_V1(const uint8_t* img, size_t width, size_t height,float a, float b, float c, uint8_t* tmp1, uint8_t* tmp2, uint8_t* result) {
-    grey_V1(img, result, width, height, a, b, c);
-    laplaceFilter_V1(result, tmp1, width, height);
-    blur_V1(result, tmp2, width, height);
+    uint16_t* tmpLaplace = malloc(sizeof(uint16_t) * width * height);
+
+    grey_V1(img, tmp1, width, height, a, b, c);
+    laplaceFilter_V1(tmp1, tmpLaplace, width, height);
+    blur_V1(tmp1, tmp2, width, height);
+    
+    float laplaceValue;
     for (size_t i = 0; i < width * height; i++) {
-        result[i] = tmp1[i] / 255 * img[i] + (1 - tmp1[i] / 255) * tmp2[i];
+        laplaceValue = (float)tmpLaplace[i] / 1020;
+        result[i] = (uint8_t) (laplaceValue * tmp1[i] + (1 - laplaceValue) * tmp2[i]);
     }
+    free(tmpLaplace);
 }
 
 /*
@@ -326,38 +342,35 @@ uint8_t edgeBlur(const uint8_t* img_in, size_t width, size_t height, size_t x, s
     return (uint8_t)val;
 }
 
-uint8_t edgeLaplaceFilter(const uint8_t* img_in, size_t width, size_t height, size_t x, size_t y) {
+uint16_t edgeLaplaceFilter(const uint8_t* img_in, size_t width, size_t height, size_t x, size_t y) {
     int32_t val = 0;
-        if (y != 0) {
-            val += img_in[(y - 1)*(width) + x];
-        }
-        if (y != height - 1) {
-            val += img_in[(y + 1)*width + x];
-        }
-        if (x != 0) {
-            val += img_in[y*width + x - 1];
-        }
-        if (x != width - 1) {
-            val += img_in[y*width + x + 1];
-        }
-        val -= 4* img_in[y*width + x];
-        return (uint8_t)abs(val / 4);
+    if (y != 0) {
+        val += img_in[(y - 1)*(width) + x];
+    }
+    if (y != height - 1) {
+        val += img_in[(y + 1)*width + x];
+    }
+    if (x != 0) {
+        val += img_in[y*width + x - 1];
+    }
+    if (x != width - 1) {
+        val += img_in[y*width + x + 1];
+    }
+    val -= 4* img_in[y*width + x];
+    return (uint16_t)abs(val);
 }
 
 struct HiLo* loadHiLoLaplace(const uint8_t* img_in, size_t width, size_t height, size_t x, size_t y, struct HiLo* hilos) {
     __m128i top, bot, left, right, zero = _mm_setzero_si128();
     
     for (int i = 0; i < 4; i++) {
-        hilos[i].hi = _mm_setzero_si128();
-        hilos[i].lo = _mm_setzero_si128();
+        hilos[i].hi = zero;
+        hilos[i].lo = zero;
     }
-
     if (y != 0) {
         top = _mm_loadu_si128((__m128i*)(img_in + (y-1)*width + x));                
         hilos[0].hi = _mm_unpackhi_epi8(top, zero);
         hilos[0].lo = _mm_unpacklo_epi8(top, zero);
-    } else {
-
     }
     if (y != height - 1) {
         bot = _mm_loadu_si128((__m128i*)(img_in + (y+1)*width + x));

@@ -229,6 +229,10 @@ int main(int argc, char *argv[]) {
         uint8_t* a = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
         if (a == NULL) {
             fprintf(stderr, "Error: No memory could be allocated for \"a\" in main/correctness.");
+            free(tempVar1);
+            free(tempVar2);
+            free(denoisedRawData);
+            free(inputPPMFileStruct.data);
             exit(1);
         }
         denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, a);
@@ -236,28 +240,32 @@ int main(int argc, char *argv[]) {
         uint8_t* b = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
         if (b == NULL) {
             fprintf(stderr, "Error: No memory could be allocated for \"b\" in main/correctness.");
-            exit(1);
-        }
-        denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
-        
-        for (size_t i = 0; i < sizeof(a); i++) {
-        if (a[i] != b[i]) {
-            printf("Not the same at: %li\n", i);
             free(tempVar1);
             free(tempVar2);
             free(denoisedRawData);
             free(inputPPMFileStruct.data);
             free(a);
-            free(b);
             exit(1);
-        } else {
-            printf("They are the same picture.\n");
         }
+        denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
+        
+        for (size_t i = 0; i < sizeof(a); i++) {
+            if (a[i] != b[i]) {
+                printf("Not the same at: %li\n", i);
+                free(tempVar1);
+                free(tempVar2);
+                free(denoisedRawData);
+                free(inputPPMFileStruct.data);
+                free(a);
+                free(b);
+                exit(1);
+            }
+        }
+        printf("They are the same picture.\n");
         free(a);
         free(b);
-        exit(0); // Success
-        }
     }
+    
 
     // Free all the malloced space 
     free(tempVar1);

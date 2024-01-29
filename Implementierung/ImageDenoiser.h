@@ -30,12 +30,11 @@ void grey_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t heigh
 /*
 Applies a Laplace filter to a grayscale image to highlight edges.
 */
-void laplaceFilter(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height);
-
+void laplaceFilter(const uint8_t* img_in, uint16_t* img_out, size_t width, size_t height);
 /*
 Applies a Laplace filter using SIMD instructions to a grayscale image to highlight edges.
 */
-void laplaceFilter_V1(const uint8_t* img_in, uint8_t* img_out, size_t width, size_t height);
+void laplaceFilter_V1(const uint8_t* img_in, uint16_t* img_out, size_t width, size_t height);
 
 /*
 Applies a blur effect to an image.
@@ -86,7 +85,7 @@ uint8_t edgeBlur(const uint8_t* img_in, size_t width, size_t height, size_t x, s
 /*
 Applies the Laplace filter to a specific pixel in an image, handling edge cases.
 */
-uint8_t edgeLaplaceFilter(const uint8_t* img_in, size_t width, size_t height, size_t x, size_t y);
+uint16_t edgeLaplaceFilter(const uint8_t* img_in, size_t width, size_t height, size_t x, size_t y);
 /*
 Loads pixel data into HiLo structs for Laplace filter processing using SIMD instructions.
 */
