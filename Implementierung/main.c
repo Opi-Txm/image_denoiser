@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         }
         denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
         
-        for (size_t i = 0; i < sizeof(a); i++) {
+        for (size_t i = 0; i < inputPPMFileStruct.width * inputPPMFileStruct.height; i++) {
             if (a[i] != b[i]) {
                 printf("Not the same at: %li\n", i);
                 free(tempVar1);
