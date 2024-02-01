@@ -148,18 +148,18 @@ int main(int argc, char *argv[]) {
     uint8_t* tempVar2;
     tempVar1 = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
     if (tempVar1 == NULL) {
-        fprintf(stderr, "Error: No memory could be allocated for \"tempVar1\" in main.");
+        printf("Error: No memory could be allocated for \"tempVar1\" in main.");
         exit(1);
     }
     tempVar2 = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
     if (tempVar2 == NULL) {
-        fprintf(stderr, "Error: No memory could be allocated for \"tempVar2\" in main.");
+        printf("Error: No memory could be allocated for \"tempVar2\" in main.");
         exit(1);
     }
     // The final output raw data 
     uint8_t* denoisedRawData = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
     if (denoisedRawData == NULL) {
-        fprintf(stderr, "Error: No memory could be allocated for \"denoisedRawData\" in main.");
+        printf("Error: No memory could be allocated for \"denoisedRawData\" in main.");
         exit(1);
     }
 
@@ -183,7 +183,8 @@ int main(int argc, char *argv[]) {
                 struct timespec end;
                 clock_gettime(CLOCK_MONOTONIC, &end);
                 double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-                printf("Done after %f seconds (measured on %d iterations)\n", time, iterations);
+                double average = time / iterations;
+                printf("Done after %f seconds on average (measured on %d iterations)\n", average, iterations);
             }
         } else {
             denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData); 
@@ -208,7 +209,8 @@ int main(int argc, char *argv[]) {
                 struct timespec end;
                 clock_gettime(CLOCK_MONOTONIC, &end);
                 double time = end.tv_sec - start.tv_sec + 1e-9 * (end.tv_nsec - start.tv_nsec);
-                printf("Done after %f seconds (measured on %d iterations)\n", time, iterations);
+                double average = time / iterations;
+                printf("Done after %f seconds on average (measured on %d iterations)\n", average, iterations);
             }
         } else {
             denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, denoisedRawData);
@@ -228,30 +230,22 @@ int main(int argc, char *argv[]) {
     if (correctness) {
         uint8_t* a = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
         if (a == NULL) {
-            fprintf(stderr, "Error: No memory could be allocated for \"a\" in main/correctness.");
-            free(tempVar1);
-            free(tempVar2);
-            free(denoisedRawData);
-            free(inputPPMFileStruct.data);
+            printf("Error: No memory could be allocated for \"a\" in main/correctness.");
             exit(1);
         }
         denoise(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, a);
 
         uint8_t* b = (uint8_t*) malloc (inputPPMFileStruct.width * inputPPMFileStruct.height);
         if (b == NULL) {
-            fprintf(stderr, "Error: No memory could be allocated for \"b\" in main/correctness.");
-            free(tempVar1);
-            free(tempVar2);
-            free(denoisedRawData);
-            free(inputPPMFileStruct.data);
-            free(a);
+            printf("Error: No memory could be allocated for \"b\" in main/correctness.");
             exit(1);
         }
         denoise_V1(inputPPMFileStruct.data, inputPPMFileStruct.width, inputPPMFileStruct.height, coeffA, coeffB, coeffC, tempVar1, tempVar2, b);
         
         for (size_t i = 0; i < inputPPMFileStruct.width * inputPPMFileStruct.height; i++) {
             if (a[i] != b[i]) {
-                printf("Not the same at: %li\n", i);
+                size_t y = i/inputPPMFileStruct.width, x = i - y*inputPPMFileStruct.width;
+                printf("Not the same at: y=%zu  x=%zu  i=%zu\n", y,x,i);
                 free(tempVar1);
                 free(tempVar2);
                 free(denoisedRawData);
@@ -262,10 +256,10 @@ int main(int argc, char *argv[]) {
             }
         }
         printf("They are the same picture.\n");
+
         free(a);
         free(b);
     }
-    
 
     // Free all the malloced space 
     free(tempVar1);
